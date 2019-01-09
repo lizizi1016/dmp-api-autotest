@@ -41,12 +41,14 @@ def step_impl(context, col, expect_val):
     has_match = pyjq.first('.data | any(."{0}" == "{1}")'.format(col, expect_val), resp)
     assert has_match
 
-@when(u'I found a server without component {comp:string}')
+@when(u'I found a server without component {comp:string}, or I skip the test')
 def step_impl(context, comp):
     resp = api_get(context, "server/list")
     match = pyjq.first('.data[] | select(has("{0}_status") | not)'.format(comp), resp)
-    assert match is not None
-    context.server = match
+    if match is None:
+        context.scenario.skip("Found no server without component {0}".format(comp))
+    else:
+    	context.server = match
 
 @when(u'I install a component {comp:string} on the server')
 def step_impl(context, comp):

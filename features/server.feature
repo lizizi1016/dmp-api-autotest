@@ -8,8 +8,27 @@ Feature: server
 	  And the response list has a record whose ucore_status is "STATUS_OK(leader)"
 
 	@test
-	Scenario: server/install should install component
-	  When I found a server without component urman-agent
-	  And I install a component urman-agent on the server
+	Scenario Outline: server/install should install component
+	  When I found a server without component <component>, or I skip the test
+	  And I install a component <component> on the server
 	  Then the response is ok
-	  And the server should has a component urman-agent 
+	  And the server should has a component <component> 
+
+
+	Examples: all_components
+		| component |
+		| ucore |
+		| uagent |
+		| umc |
+		| udeploy |
+		| uguard-mgr |
+		| uguard-agent |
+		| ustats |
+		| umon |
+		| ulogstash |
+		| uelasticsearch |
+		| urman-mgr |
+		| urman-agent |
+		| uterm |
+		| usql |
+		| urds |
