@@ -9,7 +9,28 @@ def api_request_get(context, url_path_segment):
     return context.r
 
 def api_get_response(context):
-	return context.r.json()
+    return context.r.json()
+
+def api_get(context, url_path_segment):
+    url = 'http://10.186.62.2:25799/v3/' + url_path_segment
+    r = requests.get(url)
+    api_log_full(r)
+    return r.json()
+
+def api_post(context, url_path_segment, params=None):
+    url = 'http://10.186.62.2:25799/v3/' + url_path_segment
+
+    if context == params:
+        params = {}
+        for row in context.table:
+            for x in context.table.headings:
+                params[x] = row[x]
+                if row[x].startswith("context"):
+                    params[x] = eval(row[x])
+    
+    context.r = requests.post(url, params)
+    api_log_full(context.r)
+    return context.r
 
 def api_log_full(r):
     req = r.request

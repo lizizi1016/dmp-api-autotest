@@ -40,3 +40,39 @@ def step_impl(context, col, expect_val):
     resp = api_get_response(context)
     has_match = pyjq.first('.data | any(."{0}" == "{1}")'.format(col, expect_val), resp)
     assert has_match
+
+@when(u'I found a server without component {comp:string}')
+def step_impl(context, comp):
+    resp = api_get(context, "server/list")
+    match = pyjq.first('.data[] | select(has("{0}_status") | not)'.format(comp), resp)
+    assert match is not None
+    context.server = match
+
+@when(u'I install a component {comp:string} on the server')
+def step_impl(context, comp):
+    server_id = context.server["server_id"]
+
+    # TODO find component install file first
+
+    api_post(context, "server/install", {
+        "server_id": server_id,
+        "component": comp,
+        comp + "_id": comp + "_" + server_id,
+        comp + "_install_file": comp + "-9.9.9.9-qa.x86_64.rpm",
+        comp + "_path": "/opt/" + comp,
+        "is_sync": "true",
+    })
+
+
+@then(u'the response is ok')
+def step_impl(context):
+    assert context.r.status_code == 200
+
+
+@then(u'the server should has a component {comp:string}')
+def step_impl(context, comp):
+    server_id = context.server["server_id"]
+
+    resp = api_get(context, "server/list")
+    server_has_comp_status = pyjq.first('.data[] | select(."server_id" == "{0}") | has("{1}_status")'.format(server_id, comp), resp)
+    assert server_has_comp_status
