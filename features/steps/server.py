@@ -78,3 +78,30 @@ def step_impl(context, comp):
     resp = api_get(context, "server/list")
     server_has_comp_status = pyjq.first('.data[] | select(."server_id" == "{0}") | has("{1}_status")'.format(server_id, comp), resp)
     assert server_has_comp_status
+
+@then(u'the component {comp:string} should run with the pid in pidfile')
+def step_impl(context, comp):
+    server_id = context.server["server_id"]
+
+    pids = api_get(context, "helper/pgrep", {
+        "server_id": server_id,
+        "pattern": comp,
+    })
+    pidfile = api_get(context, "helper/cat", {
+        "server_id": server_id,
+        "file": "/opt/{0}/{0}.pid".format(comp),
+    })
+    
+    assert pidfile in pids
+
+@then(u'the component {comp:string} install directory own user should be "{expect_own_user:string}" and own group should be "{expect_own_group:string}"')
+def step_impl(context, comp, expect_own_user, expect_own_group):
+    server_id = context.server["server_id"]
+
+    resp = api_get(context, "helper/stat", {
+        "server_id": server_id,
+        "file": "/opt/{0}".format(comp),
+    })
+
+    assert resp["own_user_name"] == expect_own_user
+    assert resp["own_group_name"] == expect_own_group

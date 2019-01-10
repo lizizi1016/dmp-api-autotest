@@ -13,9 +13,11 @@ Feature: server
 	  And I install a component <component> on the server
 	  Then the response is ok
 	  And the server should has a component <component> 
+	  And the component <component> install directory own user should be "actiontech-universe" and own group should be "actiontech"
+	  And the component <component> should run with the pid in pidfile
+	  
 
-
-	Examples: all_components
+	Examples: install all components
 		| component |
 		| ucore |
 		| uagent |
@@ -23,7 +25,6 @@ Feature: server
 		| udeploy |
 		| uguard-mgr |
 		| uguard-agent |
-		| ustats |
 		| umon |
 		| ulogstash |
 		| uelasticsearch |
@@ -32,3 +33,4 @@ Feature: server
 		| uterm |
 		| usql |
 		| urds |
+		| ustats |

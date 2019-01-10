@@ -11,9 +11,18 @@ def api_request_get(context, url_path_segment):
 def api_get_response(context):
     return context.r.json()
 
-def api_get(context, url_path_segment):
+def api_get(context, url_path_segment, params=None):
     url = 'http://10.186.62.2:25799/v3/' + url_path_segment
-    r = requests.get(url)
+
+    if context == params:
+        params = {}
+        for row in context.table:
+            for x in context.table.headings:
+                params[x] = row[x]
+                if row[x].startswith("context"):
+                    params[x] = eval(row[x])
+
+    r = requests.get(url, params)
     api_log_full(r)
     return r.json()
 
