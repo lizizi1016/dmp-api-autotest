@@ -56,7 +56,7 @@ def step_impl(context, comp):
 
     # TODO find component install file first
 
-    api_post(context, "server/install", {
+    api_request_post(context, "server/install", {
         "server_id": server_id,
         "component": comp,
         comp + "_id": comp + "_" + server_id,
