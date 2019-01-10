@@ -18,14 +18,14 @@ def api_request_get(context, url_path_segment, params=None):
     r = api_request_op("get", context, url_path_segment, params)
     context.r = r
     return r
-    
+
 def api_request_post(context, url_path_segment, params=None):
     r = api_request_op("post", context, url_path_segment, params)
     context.r = r
     return r
 
 def api_request_op(op, context, url_path_segment, params=None):
-    url = 'http://10.186.62.2:25799/v3/' + url_path_segment
+    url = context.base_url + url_path_segment
 
     if context == params:
         params = {}

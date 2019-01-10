@@ -1,22 +1,8 @@
 from behave import *
 from framework.api import *
 import pyjq
-import parse
 
 use_step_matcher("cfparse")
-
-@parse.with_pattern(r"[^\s]+[\s,]*")
-def parse_strings(text):
-    return text.strip(" ,")
-
-register_type(strings=parse_strings)
-
-@parse.with_pattern(r"[^\s]+")
-def parse_string(text):
-    return text.strip()
-
-register_type(string=parse_string)
-
 
 @when("I get servers list")
 def step_impl(context):
@@ -61,15 +47,9 @@ def step_impl(context, comp):
         "component": comp,
         comp + "_id": comp + "_" + server_id,
         comp + "_install_file": comp + "-9.9.9.9-qa.x86_64.rpm",
-        comp + "_path": "/opt/" + comp,
+        comp + "_path": context.component_installation_dir + comp,
         "is_sync": "true",
     })
-
-
-@then(u'the response is ok')
-def step_impl(context):
-    assert context.r.status_code == 200
-
 
 @then(u'the server should has a component {comp:string}')
 def step_impl(context, comp):
@@ -89,7 +69,7 @@ def step_impl(context, comp):
     })
     pidfile = api_get(context, "helper/cat", {
         "server_id": server_id,
-        "file": "/opt/{0}/{0}.pid".format(comp),
+        "file": context.component_installation_dir + "{0}/{0}.pid".format(comp),
     })
     
     assert pidfile in pids
@@ -100,7 +80,7 @@ def step_impl(context, comp, expect_own_user, expect_own_group):
 
     resp = api_get(context, "helper/stat", {
         "server_id": server_id,
-        "file": "/opt/{0}".format(comp),
+        "file": context.component_installation_dir + comp,
     })
 
     assert resp["own_user_name"] == expect_own_user
