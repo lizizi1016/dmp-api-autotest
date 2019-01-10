@@ -40,13 +40,18 @@ def step_impl(context, comp):
 def step_impl(context, comp):
     server_id = context.server["server_id"]
 
-    # TODO find component install file first
+    installation_files = api_get(context, "support/component", {
+        "pattern": comp,
+    })
+    assert len(installation_files) > 0
+    installation_files = pyjq.all('.[] | .name', installation_files)
+    installation_file = installation_files[-1]
 
     api_request_post(context, "server/install", {
         "server_id": server_id,
         "component": comp,
         comp + "_id": comp + "_" + server_id,
-        comp + "_install_file": comp + "-9.9.9.9-qa.x86_64.rpm",
+        comp + "_install_file": installation_file,
         comp + "_path": context.component_installation_dir + comp,
         "is_sync": "true",
     })
