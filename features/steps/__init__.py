@@ -13,6 +13,12 @@ def parse_string(text):
 
 register_type(string=parse_string)
 
+@parse.with_pattern(r"[\d]+")
+def parse_int(text):
+    return int(text)
+
+register_type(int=parse_int)
+
 @step('I set base URL to "{base_url}"')
 def set_base_url(context, base_url):
     if base_url.startswith("context"):
