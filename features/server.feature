@@ -12,9 +12,8 @@ Feature: server
 	  When I found a server without component <component>, or I skip the test
 	  And I install a component <component> on the server
 	  Then the response is ok
-	  And the server should has a component <component> 
-	  And the component <component> install directory own user should be "actiontech-universe" and own group should be "actiontech"
-	  And the component <component> should run with the pid in pidfile
+	  And the server should has component <component> 
+	  And the server's component <component> should be installed as the standard
 	  
 
 	Examples: install all components
@@ -34,6 +33,14 @@ Feature: server
 		| usql |
 		| urds |
 		| ustats |
+
+	@test @case.272
+	Scenario: server/prepare_server_env_for_guard should install components
+	  When I found a server without components udeploy,ustats,uguard-agent,urman-agent, or I skip the test
+	  And I prepare the server for uguard
+	  Then the response is ok
+	  And the server should has components udeploy,ustats,uguard-agent,urman-agent
+	  And the server's components udeploy,ustats,uguard-agent,urman-agent should be installed as the standard
 
 	@test @case.272
 	Scenario: sippool/add and sippool/remove should succeed

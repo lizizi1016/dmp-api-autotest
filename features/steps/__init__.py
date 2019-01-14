@@ -1,7 +1,7 @@
 from behave import *
 import parse
 
-@parse.with_pattern(r"[^\s]+[\s,]*")
+@parse.with_pattern(r"[^\s]+")
 def parse_strings(text):
     return text.strip(" ,")
 
@@ -18,6 +18,12 @@ def parse_int(text):
     return int(text)
 
 register_type(int=parse_int)
+
+@parse.with_pattern(r"s")
+def parse_s(text):
+    return text
+
+register_type(s=parse_s)
 
 @step('I set base URL to "{base_url}"')
 def set_base_url(context, base_url):

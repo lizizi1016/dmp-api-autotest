@@ -27,25 +27,31 @@ def step_impl(context, col, expect_val):
     has_match = pyjq.first('.data | any(."{0}" == "{1}")'.format(col, expect_val), resp)
     assert has_match
 
-@when(u'I found a server without component {comp:string}, or I skip the test')
-def step_impl(context, comp):
+@when(u'I found a server without component{s:s?} {comps:strings+}, or I skip the test')
+def step_impl(context, s, comps):
     resp = api_get(context, "server/list")
-    match = pyjq.first('.data[] | select(has("{0}_status") | not)'.format(comp), resp)
+    conditions = map(lambda comp: 'select(has("{0}_status") | not)'.format(comp), comps)
+    condition = '.data[] | ' + " | ".join(conditions)
+
+    match = pyjq.first(condition, resp)
     if match is None:
-        context.scenario.skip("Found no server without component {0}".format(comp))
+        context.scenario.skip("Found no server without components {0}".format(comps))
     else:
     	context.server = match
 
-@when(u'I install a component {comp:string} on the server')
-def step_impl(context, comp):
-    server_id = context.server["server_id"]
-
+def get_installation_file(context, comp):
     installation_files = api_get(context, "support/component", {
         "pattern": comp,
     })
     assert len(installation_files) > 0
     installation_files = pyjq.all('.[] | .name', installation_files)
     installation_file = installation_files[-1]
+    return installation_file
+
+@when(u'I install a component {comp:string} on the server')
+def step_impl(context, comp):
+    server_id = context.server["server_id"]
+    installation_file = get_installation_file(context, comp)
 
     api_request_post(context, "server/install", {
         "server_id": server_id,
@@ -56,12 +62,14 @@ def step_impl(context, comp):
         "is_sync": "true",
     })
 
-@then(u'the server should has a component {comp:string}')
-def step_impl(context, comp):
+@then(u'the server should has component{s:s?} {comps:strings+}')
+def step_impl(context, s, comps):
     server_id = context.server["server_id"]
 
     resp = api_get(context, "server/list")
-    server_has_comp_status = pyjq.first('.data[] | select(."server_id" == "{0}") | has("{1}_status")'.format(server_id, comp), resp)
+    conditions = map(lambda comp: 'select(has("{0}_status"))'.format(comp), comps)
+    condition = '.data[] | select(."server_id" == "{0}") | '.format(server_id) + " | ".join(conditions)
+    server_has_comp_status = pyjq.first(condition, resp)
     assert server_has_comp_status
 
 @then(u'the component {comp:string} should run with the pid in pidfile')
@@ -160,3 +168,36 @@ def step_impl(context, expect_ips):
 def get_sippool_all_ips(context):
     resp = api_get(context, "sippool/list")
     return pyjq.all('.[] | .sip', resp)
+
+@when(u'I prepare the server for uguard')
+def step_impl(context):
+    server = context.server
+    assert server != None
+
+    params = {
+        "is_sync": "true",
+        "server_id": server["server_id"],
+    }
+
+    for comp in ["udeploy", "ustats", "uguard-agent", "urman-agent"]:
+        if not comp + "_status" in server:
+            installation_file = get_installation_file(context, comp)
+            params["is_installed_" + comp] = "uninstalled"
+            params[comp + "_id"] = comp + "_" + server["server_id"]
+            params[comp + "_install_file"] = installation_file
+            params[comp + "_path"] = context.component_installation_dir + comp
+            if comp == "urman-agent":
+                params["max-backup-concurrency-num"] = "2"
+
+    api_request_post(context, "server/prepare_server_env_for_guard", params)
+
+
+@then(u'the server\'s component{s:s?} {comps:strings+} should be installed as the standard')
+def step_impl(context, s, comps):
+    assert context.server != None
+
+    for comp in comps:
+        context.execute_steps(u"""
+            Then the component {component} install directory own user should be "actiontech-universe" and own group should be "actiontech"
+            And the component {component} should run with the pid in pidfile
+        """.format(component=comp))
