@@ -43,6 +43,14 @@ Feature: server
 	  And the server's components udeploy,ustats,uguard-agent,urman-agent should be installed as the standard
 
 	@test @case.272
+	Scenario: server/prepare_server_env_for_guard_manager should install components
+	  When I found a server without components uguard-mgr,urman-mgr, or I skip the test
+	  And I prepare the server for uguard manager
+	  Then the response is ok
+	  And the server should has components uguard-mgr,urman-mgr
+	  And the server's components uguard-mgr,urman-mgr should be installed as the standard
+
+	@test @case.272
 	Scenario: sippool/add and sippool/remove should succeed
 	  When I found a ip segments xx.xx.0.0/16 which not contains in sip pool
 	  And I add ip xx.xx.1.2 to sip pool

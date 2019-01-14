@@ -191,6 +191,26 @@ def step_impl(context):
 
     api_request_post(context, "server/prepare_server_env_for_guard", params)
 
+@when(u'I prepare the server for uguard manager')
+def step_impl(context):
+    server = context.server
+    assert server != None
+
+    params = {
+        "is_sync": "true",
+        "server_id": server["server_id"],
+    }
+
+    for comp in ["uguard-mgr", "urman-mgr"]:
+        if not comp + "_status" in server:
+            installation_file = get_installation_file(context, comp)
+            params["is_installed_" + comp] = "uninstalled"
+            params[comp + "_id"] = comp + "_" + server["server_id"]
+            params[comp + "_install_file"] = installation_file
+            params[comp + "_path"] = context.component_installation_dir + comp
+
+    api_request_post(context, "server/prepare_server_env_for_guard_manager", params)
+
 
 @then(u'the server\'s component{s:s?} {comps:strings+} should be installed as the standard')
 def step_impl(context, s, comps):
