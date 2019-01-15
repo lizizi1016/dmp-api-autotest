@@ -1,6 +1,7 @@
 from behave import *
 from framework.api import *
 import pyjq
+import time
 
 use_step_matcher("cfparse")
 
@@ -50,7 +51,9 @@ def get_installation_file(context, comp):
 
 @when(u'I install a component {comp:string} on the server')
 def step_impl(context, comp):
+    assert context.server != None
     server_id = context.server["server_id"]
+
     installation_file = get_installation_file(context, comp)
 
     api_request_post(context, "server/install", {
@@ -64,6 +67,7 @@ def step_impl(context, comp):
 
 @then(u'the server should has component{s:s?} {comps:strings+}')
 def step_impl(context, s, comps):
+    assert context.server != None
     server_id = context.server["server_id"]
 
     resp = api_get(context, "server/list")
@@ -74,6 +78,7 @@ def step_impl(context, s, comps):
 
 @then(u'the component {comp:string} should run with the pid in pidfile')
 def step_impl(context, comp):
+    assert context.server != None
     server_id = context.server["server_id"]
 
     pids = api_get(context, "helper/pgrep", {
@@ -89,6 +94,7 @@ def step_impl(context, comp):
 
 @then(u'the component {comp:string} install directory own user should be "{expect_own_user:string}" and own group should be "{expect_own_group:string}"')
 def step_impl(context, comp, expect_own_user, expect_own_group):
+    assert context.server != None
     server_id = context.server["server_id"]
 
     resp = api_get(context, "helper/stat", {
@@ -212,12 +218,25 @@ def step_impl(context):
     api_request_post(context, "server/prepare_server_env_for_guard_manager", params)
 
 
+@then(u'the component {comp:string} should be running in {duration:time}')
+def step_impl(context, comp, duration):
+    assert context.server != None
+    server_id = context.server["server_id"]
+    
+    for i in range(1, duration * context.time_weight * 10):
+        resp = api_get(context, "server/list")
+        condition = '.data[] | select(."server_id" == "{0}") | ."{1}_status"'.format(server_id, comp)
+        match = pyjq.first(condition, resp)
+        if match != None and (match in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]):
+            return
+        time.sleep(0.1)
+
+
 @then(u'the server\'s component{s:s?} {comps:strings+} should be installed as the standard')
 def step_impl(context, s, comps):
-    assert context.server != None
-
     for comp in comps:
         context.execute_steps(u"""
             Then the component {component} install directory own user should be "actiontech-universe" and own group should be "actiontech"
             And the component {component} should run with the pid in pidfile
+            And the component {component} should be running in 11s
         """.format(component=comp))

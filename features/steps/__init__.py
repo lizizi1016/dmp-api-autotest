@@ -25,6 +25,12 @@ def parse_s(text):
 
 register_type(s=parse_s)
 
+@parse.with_pattern(r"[\d]+s")
+def parse_time(text):
+    return int(text.strip("s"))
+
+register_type(time=parse_time)
+
 @step('I set base URL to "{base_url}"')
 def set_base_url(context, base_url):
     if base_url.startswith("context"):

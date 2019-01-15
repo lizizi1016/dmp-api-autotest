@@ -1,2 +1,3 @@
 base_url: http://10.186.62.2:25799/v3/
 component_installation_dir: /opt/
+time_weight: 1
