@@ -230,6 +230,7 @@ def step_impl(context, comp, duration):
         if match != None and (match in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]):
             return
         time.sleep(0.1)
+    assert False
 
 
 @then(u'the server\'s component{s:s?} {comps:strings+} should be installed as the standard')

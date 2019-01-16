@@ -25,9 +25,13 @@ def parse_s(text):
 
 register_type(s=parse_s)
 
-@parse.with_pattern(r"[\d]+s")
+@parse.with_pattern(r"[\d]+[sm]")
 def parse_time(text):
-    return int(text.strip("s"))
+    num = int(text.strip("sm"))
+    if text[-1] == 'm':
+        return num*60
+    else:
+        return num
 
 register_type(time=parse_time)
 

@@ -8,10 +8,12 @@ def api_get_response(context, r=None):
 
 def api_get(context, url_path_segment, params=None):
     r = api_request_op("get", context, url_path_segment, params)
+    assert r.status_code == 200
     return api_get_response(context, r)
 
 def api_post(context, url_path_segment, params=None):
     r = api_request_op("post", context, url_path_segment, params)
+    assert r.status_code == 200
     return api_get_response(context, r)
 
 def api_request_get(context, url_path_segment, params=None):
