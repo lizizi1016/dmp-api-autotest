@@ -115,6 +115,16 @@ def step_impl(context):
 	else:
 		context.backup_rule = rule
 
+@when(u'I found the MySQL instance of the backup rule')
+def step_impl(context):
+	#TODO
+	match = {
+    	"instance_id": "mysql-taxb4w",
+    	"server_id": "server-udp2",
+    	"backup_path": "/opt/mysql/backup/3306",
+    }
+	context.mysql_instance = match
+
 @when(u'I remove the backup rule')
 def step_impl(context):
 	assert context.backup_rule != None
@@ -131,7 +141,6 @@ def step_impl(context):
         "backup_rule_id": backup_rule_id,
     })
 
-
 @then(u'the backup rule should not exist')
 def step_impl(context):
 	assert context.backup_rule != None
@@ -142,10 +151,36 @@ def step_impl(context):
 
 	assert not has_match
 
-
 def get_3pc_config_id(resp):
     idx = resp['raw'].rindex('{"config-id"')
     obj = json.loads(resp['raw'][idx:])
     config_id = obj['config-id']
     assert config_id != None
     return config_id
+
+@when(u'I recycle the backup dir of the MySQL instance')
+def step_impl(context):
+	assert context.mysql_instance != None
+	mysql = context.mysql_instance
+	mysql_id = mysql["instance_id"]
+
+	api_request_post(context, "urman_rule/recycle_backup_dir", {
+		"instance_id": mysql_id,
+        "rule_type": "backup_tool_rule",
+        "is_sync": "true",
+	})
+
+@then(u'the backup dir of the MySQL instance should not exist')
+def step_impl(context):
+	assert context.mysql_instance != None
+	mysql = context.mysql_instance
+	mysql_id = mysql["instance_id"]
+	server_id = mysql["server_id"]
+	backup_path = mysql["backup_path"]
+
+	resp = api_get(context, "helper/ll", {
+        "server_id": server_id,
+        "path": backup_path,
+    })
+
+	assert len(resp) == 0
