@@ -64,14 +64,9 @@ xb_copy_back_timeout_seconds = 21600
 		"only_slave": "false",
 		"only_master": "false"
     })
-
-	idx = resp['raw'].rindex('{"config-id"')
-	obj = json.loads(resp['raw'][idx:])
-	config_id = obj['config-id']
-	assert config_id != None
 	
 	api_request_post(context, "urman_rule/confirm_add_backup_rule", {
-        "config-id": config_id,
+        "config-id": get_3pc_config_id(resp),
         "is-commit": "true",
         "backup_rule_id": backup_rule_id,
     })
@@ -129,14 +124,9 @@ def step_impl(context):
 	resp = api_post(context, "urman_rule/remove_backup_rule", {
 		"backup_rule_id": backup_rule_id,
 	})
-
-	idx = resp['raw'].rindex('{"config-id"')
-	obj = json.loads(resp['raw'][idx:])
-	config_id = obj['config-id']
-	assert config_id != None
 	
 	api_request_post(context, "urman_rule/confirm_remove_backup_rule", {
-        "config-id": config_id,
+        "config-id": get_3pc_config_id(resp),
         "is-commit": "true",
         "backup_rule_id": backup_rule_id,
     })
@@ -151,3 +141,11 @@ def step_impl(context):
 	has_match = pyjq.first('.data | any(."backup_rule_id" == "{0}")'.format(backup_rule_id), resp)
 
 	assert not has_match
+
+
+def get_3pc_config_id(resp):
+    idx = resp['raw'].rindex('{"config-id"')
+    obj = json.loads(resp['raw'][idx:])
+    config_id = obj['config-id']
+    assert config_id != None
+    return config_id
