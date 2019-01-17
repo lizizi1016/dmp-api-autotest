@@ -13,6 +13,12 @@ def parse_string(text):
 
 register_type(string=parse_string)
 
+@parse.with_pattern(r".*")
+def parse_any(text):
+    return text.strip()
+
+register_type(any=parse_any)
+
 @parse.with_pattern(r"[\d]+")
 def parse_int(text):
     return int(text)
