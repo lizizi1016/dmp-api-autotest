@@ -110,3 +110,44 @@ def step_impl(context, duration):
 		time.sleep(1)
 	assert False
 
+@when(u'I found a backup rule, or I skip the test')
+def step_impl(context):
+	resp = api_get(context, "urman_rule/list_backup_rule")
+	rule = pyjq.first('.data[0]', resp)
+
+	if rule == None:
+		context.scenario.skip("Found no backup rule")
+	else:
+		context.backup_rule = rule
+
+@when(u'I remove the backup rule')
+def step_impl(context):
+	assert context.backup_rule != None
+
+	backup_rule_id = context.backup_rule["backup_rule_id"]
+
+	resp = api_post(context, "urman_rule/remove_backup_rule", {
+		"backup_rule_id": backup_rule_id,
+	})
+
+	idx = resp['raw'].rindex('{"config-id"')
+	obj = json.loads(resp['raw'][idx:])
+	config_id = obj['config-id']
+	assert config_id != None
+	
+	api_request_post(context, "urman_rule/confirm_remove_backup_rule", {
+        "config-id": config_id,
+        "is-commit": "true",
+        "backup_rule_id": backup_rule_id,
+    })
+
+
+@then(u'the backup rule should not exist')
+def step_impl(context):
+	assert context.backup_rule != None
+	backup_rule_id = context.backup_rule["backup_rule_id"]
+
+	resp = api_get(context, "urman_rule/list_backup_rule")
+	has_match = pyjq.first('.data | any(."backup_rule_id" == "{0}")'.format(backup_rule_id), resp)
+
+	assert not has_match
