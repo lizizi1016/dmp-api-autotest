@@ -1,4 +1,5 @@
 from behave import *
+from framework.api import *
 import parse
 
 @parse.with_pattern(r"[^\s]+")
@@ -51,3 +52,12 @@ def set_base_url(context, base_url):
 @then(u'the response is ok')
 def step_impl(context):
     assert context.r.status_code == 200
+
+def login(context):
+    resp = api_post(context, "user/login", {
+        "user": "admin",
+        "password": "admin",
+    })
+    return resp["token"]
+
+api_set_login_fn(login)
