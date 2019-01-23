@@ -15,7 +15,7 @@ def step_impl(context, option, option_value):
 		"super_user": "root",
 		"super_password": mysql["root_password"],
 		"mysql_connect_type": "socket",
-		"mysql_ids": mysql["instance_id"],
+		"mysql_ids": mysql["mysql_id"],
 		"option": option,
 		"option_value": option_value,
 	})

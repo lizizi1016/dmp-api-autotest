@@ -30,7 +30,9 @@ def step_impl(context, col, expect_val):
 
 @when(u'I found a server without component{s:s?} {comps:strings+}, or I skip the test')
 def step_impl(context, s, comps):
-    resp = api_get(context, "server/list")
+    resp = api_get(context, "server/list", {
+        "number": context.page_size_to_select_all,
+    })
     conditions = map(lambda comp: 'select(has("{0}_status") | not)'.format(comp), comps)
     condition = '.data[] | ' + " | ".join(conditions)
 
@@ -45,8 +47,9 @@ def get_installation_file(context, comp):
         "pattern": comp,
     })
     assert len(installation_files) > 0
-    installation_files = pyjq.all('.[] | .name', installation_files)
+    installation_files = pyjq.all('.[] | .Name', installation_files)
     installation_file = installation_files[-1]
+    assert installation_file != None
     return installation_file
 
 @when(u'I install a component {comp:string} on the server')
@@ -70,7 +73,9 @@ def step_impl(context, s, comps):
     assert context.server != None
     server_id = context.server["server_id"]
 
-    resp = api_get(context, "server/list")
+    resp = api_get(context, "server/list", {
+        "number": context.page_size_to_select_all,
+    })
     conditions = map(lambda comp: 'select(has("{0}_status"))'.format(comp), comps)
     condition = '.data[] | select(."server_id" == "{0}") | '.format(server_id) + " | ".join(conditions)
     server_has_comp_status = pyjq.first(condition, resp)
@@ -172,7 +177,9 @@ def step_impl(context, expect_ips):
         assert not (expect_ip in exist_ips)
 
 def get_sippool_all_ips(context):
-    resp = api_get(context, "sippool/list")
+    resp = api_get(context, "sippool/list", {
+        "number": context.page_size_to_select_all,
+    })
     return pyjq.all('.[] | .sip', resp)
 
 @when(u'I prepare the server for uguard')
@@ -224,7 +231,9 @@ def step_impl(context, comp, duration):
     server_id = context.server["server_id"]
     
     for i in range(1, duration * context.time_weight * 10):
-        resp = api_get(context, "server/list")
+        resp = api_get(context, "server/list", {
+            "number": context.page_size_to_select_all,
+        })
         condition = '.data[] | select(."server_id" == "{0}") | ."{1}_status"'.format(server_id, comp)
         match = pyjq.first(condition, resp)
         if match != None and (match in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]):

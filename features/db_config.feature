@@ -1,6 +1,6 @@
 Feature: db_config
 
-	@test @case.272 @wip
+	@test @case.272
 	Scenario Outline: update MySQL configuration should succeed
 	  When I found a running MySQL instance, or I skip the test
 	  And I update MySQL configuration "<option>" to "<option_value>"

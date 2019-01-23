@@ -9,16 +9,19 @@ use_step_matcher("cfparse")
 
 @when(u'I found a MySQL instance without backup rule, or I skip the test')
 def step_impl(context):
-	#TODO
-    match = {
-    	"instance_id": "mysql-taxb4w",
-    	"server_id": "server-udp2",
-    }
-    if match is None:
-        context.scenario.skip("Found no MySQL instance without backup rule")
-    else:
-    	context.mysql_instance = match
+	mysqls = api_get(context, "database/list_instance", {
+		"number": context.page_size_to_select_all,
+	})
+	mysql_ids = pyjq.all('.data[] | .mysql_id', mysqls)
 
+	for mysql_id in mysql_ids:
+		resp = api_get(context, "urman_rule/list_backup_rule", {
+			mysql_id: mysql_id,
+		})
+		if len(resp["data"]) == 0:
+			context.mysql_instance = pyjq.first('.data[] | select(.mysql_id = "{0}")'.format(mysql_id), mysqls)
+			return
+	context.scenario.skip("Found no MySQL instance without backup rule")
 
 @when(u'I add a backup rule to the MySQL instance, which will be triggered in {delta_minutes:int}m')
 def step_impl(context, delta_minutes):
@@ -28,11 +31,11 @@ def step_impl(context, delta_minutes):
 	ts = datetime.now()
 	newMinute = (ts.minute + delta_minutes * context.time_weight) % 60
 	cron = "0 {0} * * * ?".format(newMinute)
-	backup_rule_id = "rule_" + mysql["instance_id"]
+	backup_rule_id = "rule_" + mysql["mysql_id"]
 	
 	resp = api_post(context, "urman_rule/add_backup_rule", {
         "backup_rule_id": backup_rule_id,
-        "instance_id": mysql["instance_id"],
+        "instance_id": mysql["mysql_id"],
         "server_id": mysql["server_id"],
         "full_backup_cron": cron,
         "increment_backup_cron": "",
@@ -75,7 +78,7 @@ xb_copy_back_timeout_seconds = 21600
 def step_impl(context):
 	assert context.mysql_instance != None
 	mysql = context.mysql_instance
-	mysql_id = mysql["instance_id"]
+	mysql_id = mysql["mysql_id"]
 
 	resp = api_get(context, "urman_rule/list_backup_rule", {
 		"instance_id": mysql_id,
@@ -88,7 +91,7 @@ def step_impl(context):
 def step_impl(context, duration):
 	assert context.mysql_instance != None
 	mysql = context.mysql_instance
-	mysql_id = mysql["instance_id"]
+	mysql_id = mysql["mysql_id"]
 
 	resp = api_get(context, "urman_backupset/list", {
 		"instance": mysql_id,
@@ -107,7 +110,9 @@ def step_impl(context, duration):
 
 @when(u'I found a backup rule, or I skip the test')
 def step_impl(context):
-	resp = api_get(context, "urman_rule/list_backup_rule")
+	resp = api_get(context, "urman_rule/list_backup_rule", {
+		"number": context.page_size_to_select_all,
+	})
 	rule = pyjq.first('.data[0]', resp)
 
 	if rule == None:
@@ -117,13 +122,13 @@ def step_impl(context):
 
 @when(u'I found the MySQL instance of the backup rule')
 def step_impl(context):
-	#TODO
-	match = {
-    	"instance_id": "mysql-taxb4w",
-    	"server_id": "server-udp2",
-    	"backup_path": "/opt/mysql/backup/3306",
-    }
-	context.mysql_instance = match
+	assert context.backup_rule != None
+
+	mysqls = api_get(context, "database/list_instance", {
+		"mysql_id": context.backup_rule["instance_id"],
+	})
+	assert len(mysqls["data"]) == 1
+	context.mysql_instance = mysqls["data"][0]
 
 @when(u'I remove the backup rule')
 def step_impl(context):
@@ -146,7 +151,9 @@ def step_impl(context):
 	assert context.backup_rule != None
 	backup_rule_id = context.backup_rule["backup_rule_id"]
 
-	resp = api_get(context, "urman_rule/list_backup_rule")
+	resp = api_get(context, "urman_rule/list_backup_rule", {
+		"number": context.page_size_to_select_all,
+	})
 	has_match = pyjq.first('.data | any(."backup_rule_id" == "{0}")'.format(backup_rule_id), resp)
 
 	assert not has_match
@@ -162,7 +169,7 @@ def get_3pc_config_id(resp):
 def step_impl(context):
 	assert context.mysql_instance != None
 	mysql = context.mysql_instance
-	mysql_id = mysql["instance_id"]
+	mysql_id = mysql["mysql_id"]
 
 	api_request_post(context, "urman_rule/recycle_backup_dir", {
 		"instance_id": mysql_id,
@@ -174,7 +181,7 @@ def step_impl(context):
 def step_impl(context):
 	assert context.mysql_instance != None
 	mysql = context.mysql_instance
-	mysql_id = mysql["instance_id"]
+	mysql_id = mysql["mysql_id"]
 	server_id = mysql["server_id"]
 	backup_path = mysql["backup_path"]
 
@@ -201,7 +208,7 @@ def step_impl(context, delta_minutes):
 	
 	resp = api_post(context, "urman_rule/update_backup_rule", {
         "backup_rule_id": backup_rule_id,
-        "instance_id": mysql["instance_id"],
+        "instance_id": mysql["mysql_id"],
         "server_id": mysql["server_id"],
         "full_backup_cron": cron,
         "increment_backup_cron": "",

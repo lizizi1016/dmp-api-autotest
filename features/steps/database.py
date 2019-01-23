@@ -8,16 +8,20 @@ use_step_matcher("cfparse")
 
 @when(u'I found a running MySQL instance, or I skip the test')
 def step_impl(context):
-	#TODO
-	match = {
-		"instance_id": "mysql-taxb4w",
-		"server_id": "server-udp2",
-		"root_password": "123",
-	}
-	if match is None:
+	mysqls = api_get(context, "database/list_instance", {
+		"number": context.page_size_to_select_all,
+	})
+	mysql = pyjq.first('.data[] | select(.mysql_status == "STATUS_MYSQL_HEALTH_OK")', mysqls)
+	if mysql is None:
 		context.scenario.skip("Found no MySQL instance without backup rule")
-	else:
-		context.mysql_instance = match
+		return
+
+	root_password = api_get(context, "helper/get_mysql_password", {
+		"mysql_id": mysql["mysql_id"],
+		"password_type": "ROOT",
+	})
+	mysql["root_password"] = root_password
+	context.mysql_instance = mysql
 
 @when(u'I query the MySQL instance "{query:any}"')
 def step_impl(context, query):
@@ -25,7 +29,7 @@ def step_impl(context, query):
 	mysql = context.mysql_instance
 
 	resp = api_get(context, "helper/query_mysql", {
-		"mysql_id": mysql["instance_id"],
+		"mysql_id": mysql["mysql_id"],
 		"query": query,
 		"user": "root",
 		"password": mysql["root_password"],
