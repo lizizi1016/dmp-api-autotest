@@ -47,3 +47,30 @@ def step_impl(context):
 		for heading in context.table.headings:
 			assert row[heading] == actual_row[heading]
 		idx += 1
+
+@when(u'I add a MySQL group with the SIP')
+def step_impl(context):
+	assert context.valid_sip != None
+	sip = context.valid_sip
+
+	mysql_group_id = "mysql-group-" + str(int(time.time()))
+
+	api_request_post(context, "database/add_group", {
+		"is_sync": True,
+		"group_id": mysql_group_id,
+		"sip": sip,
+		"tag_list": "[]",
+	})
+
+	context.mysql_group_id = mysql_group_id
+
+
+@then(u'the MySQL group list should contains the MySQL group')
+def step_impl(context):
+	assert context.mysql_group_id != None
+
+	resp = api_get(context, "database/list_group", {
+		"number": context.page_size_to_select_all,
+	})
+	match = pyjq.first('.data[] | select(.group_id == "{0}")'.format(context.mysql_group_id), resp)
+	assert match != None
