@@ -62,15 +62,37 @@ def step_impl(context):
 		"tag_list": "[]",
 	})
 
-	context.mysql_group_id = mysql_group_id
+	context.mysql_group = {"group_id": mysql_group_id}
 
 
-@then(u'the MySQL group list should contains the MySQL group')
-def step_impl(context):
-	assert context.mysql_group_id != None
+@then(u'the MySQL group list {should_or_not:should_or_not} contains the MySQL group')
+def step_impl(context, should_or_not):
+	assert context.mysql_group != None
+	mysql_group_id = context.mysql_group["group_id"]
 
 	resp = api_get(context, "database/list_group", {
 		"number": context.page_size_to_select_all,
 	})
-	match = pyjq.first('.data[] | select(.group_id == "{0}")'.format(context.mysql_group_id), resp)
-	assert match != None
+	match = pyjq.first('.data[] | select(.group_id == "{0}")'.format(mysql_group_id), resp)
+	assert (match != None and should_or_not) or (match == None and not should_or_not)
+
+@when(u'I found a MySQL group without MySQL instance, or I skip the test')
+def step_impl(context):
+	resp = api_get(context, "database/list_group", {
+		"number": context.page_size_to_select_all,
+	})
+	match = pyjq.first('.data[] | select(.group_instance_num == "0")', resp)
+	if match is None:
+		context.scenario.skip("Found no MySQL group without MySQL instance")
+	else:
+		context.mysql_group = match
+
+@when(u'I remove the MySQL group')
+def step_impl(context):
+	assert context.mysql_group != None
+	mysql_group_id = context.mysql_group["group_id"]
+
+	api_request_post(context, "database/remove_group", {
+		"is_sync": True,
+		"group_id": mysql_group_id,
+	})

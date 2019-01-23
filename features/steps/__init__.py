@@ -2,6 +2,15 @@ from behave import *
 from framework.api import *
 import parse
 
+@parse.with_pattern(r"should( not)?")
+def parse_should_or_not(text):
+    if text == "should not":
+        return False
+    else:
+        return True
+        
+register_type(should_or_not=parse_should_or_not)
+
 @parse.with_pattern(r"[^\s]+")
 def parse_strings(text):
     return text.strip(" ,")
