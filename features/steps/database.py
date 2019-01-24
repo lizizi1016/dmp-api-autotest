@@ -3,8 +3,8 @@ from framework.api import *
 import pyjq
 import time
 import json
-import random
 import re
+from util import *
 
 use_step_matcher("cfparse")
 
@@ -66,6 +66,18 @@ def step_impl(context):
 
 	context.mysql_group = {"group_id": mysql_group_id}
 
+@when(u'I add a MySQL group')
+def step_impl(context):
+	mysql_group_id = "mysql-group-" + str(int(time.time()))
+
+	api_request_post(context, "database/add_group", {
+		"is_sync": True,
+		"group_id": mysql_group_id,
+		"tag_list": "[]",
+	})
+
+	context.mysql_group = {"group_id": mysql_group_id}
+
 
 @then(u'the MySQL group list {should_or_not:should_or_not} contains the MySQL group')
 def step_impl(context, should_or_not):
@@ -78,12 +90,23 @@ def step_impl(context, should_or_not):
 	match = pyjq.first('.data[] | select(.group_id == "{0}")'.format(mysql_group_id), resp)
 	assert (match != None and should_or_not) or (match == None and not should_or_not)
 
+@when(u'I found a MySQL group without MySQL instance, and without SIP, or I skip the test')
+def step_impl(context):
+	resp = api_get(context, "database/list_group", {
+		"number": context.page_size_to_select_all,
+	})
+	match = pyjq.first('.data[] | select(.group_instance_num == "0") | select(has("sip") | not)', resp)
+	if match is None:
+		context.scenario.skip("Found no MySQL group without MySQL instance, and without SIP")
+	else:
+		context.mysql_group = match
+
 @when(u'I found a MySQL group without MySQL instance, or I skip the test')
 def step_impl(context):
 	resp = api_get(context, "database/list_group", {
 		"number": context.page_size_to_select_all,
 	})
-	match = pyjq.first('.data[] | select(.group_instance_num == "0")', resp)
+	match = pyjq.first('.data[] | select(.group_instance_num == "0"))', resp)
 	if match is None:
 		context.scenario.skip("Found no MySQL group without MySQL instance")
 	else:
@@ -102,7 +125,7 @@ def step_impl(context):
 @when(u'I found a valid MySQL port, or I skip the test')
 def step_impl(context):
 	for _ in range(1,1024):
-		port = random.randint(6000, 65535)
+		port = randint(6000, 65535)
 		resp = api_get(context, "database/list_instance", {
 			"port": str(port),
 		})
@@ -129,16 +152,19 @@ def step_impl(context):
 		"path": "mycnfs/my.cnf." + main_version, 
 	})
 
+	mycnf = mycnf.replace("innodb_data_file_path = ibdata1:1G:autoextend", "innodb_data_file_path = ibdata1:64M:autoextend")
+
 	install_params = {
 		"server_id": context.server["server_id"],
         "group_id": context.mysql_group["group_id"],
-        "port": context.valid_port,
+        "port": port,
         "mysql_id": mysql_id,
         "mysql_alias": mysql_id,
         "mysql_tarball_path": install_file,
         "install_standard": "uguard_semi_sync",
         "init_data": "",
-        "extranet_root_privilege": "",
+		"create_extranet_root":"1",
+		"extranet_root_privilege":"ALL PRIVILEGES ON *.*\nPROXY ON \"@\"",
         "mysql_root_init_password": "@123qwerTYUIOP",
         "mysql_base_path": mysql_dir + "base/" + version,
         "mysql_data_path": mysql_dir + "data/" + port,
@@ -158,7 +184,7 @@ def step_impl(context):
         "run_user_group": "",
         "mysql_uid": "",
         "mysql_gid": "",
-        "mycnf_server_id": str(random.randint(1, 99999999999)),
+        "mycnf_server_id": str(randint(1, 99999999999)),
         "umask": "0640",
         "umask_dir": "0750",
         "mycnf_config": mycnf
@@ -198,3 +224,129 @@ def step_impl(context, expect_count, duration):
 			return
 		time.sleep(0.1)
 	assert False
+
+@when(u'I found a MySQL master in the MySQL group')
+def step_impl(context):
+	assert context.mysql_group != None
+	match = get_mysql_master_in_group(context, context.mysql_group["group_id"])
+	assert match != None
+	context.mysql_instance = match
+
+def get_mysql_master_in_group(context, group_id):
+	resp = api_get(context, "database/list_instance", {
+		"group_id": group_id,
+	})
+	match = pyjq.first('.data[] | select(."role" == "STATUS_MYSQL_MASTER")', resp)
+	return match
+
+@when(u'I make a manual backup on the MySQL instance')
+def step_impl(context):
+	assert context.mysql_instance != None
+	cnf = api_get(context, "support/read_umc_file", {
+		"path": "backupcnfs/backup.xtrabackup", 
+	})
+
+	api_post(context, "database/manual_backup", {
+		"is_sync": True,
+		"mysql_id": context.mysql_instance["mysql_id"],
+		"backup_tool": "Xtrabackup",
+		"backup_cnf": cnf,
+	})
+
+@when(u'I add MySQL slave in the MySQL group')
+def step_impl(context):
+	assert context.mysql_group != None
+
+	mysql_group_id = context.mysql_group["group_id"]
+	mysql_master = get_mysql_master_in_group(context, mysql_group_id)
+
+	context.execute_steps(u"""
+			When I found a server with components ustats,udeploy,uguard-agent,urman-agent, except {server}
+		""".format(server=mysql_master["server_id"]))
+
+	resp = api_get(context, "support/init_data", {
+		"group_id": mysql_group_id,
+	})
+	assert len(resp) > 0
+	init_data = resp[-1]["name"]
+
+
+	mysql_id = "mysql-" + str(int(time.time()))
+	port = mysql_master["port"]
+	install_file = get_mysql_installation_file(context)
+	version = re.match(r".*(\d+\.\d+\.\d+).*", install_file).group(1)
+	main_version = re.match(r"(\d+\.\d+)\.\d+", version).group(1)
+
+	mycnf = mysql_master["mycnf"]
+
+	install_params = {
+		"server_id": context.server["server_id"],
+        "group_id": context.mysql_group["group_id"],
+        "port": port,
+        "mysql_id": mysql_id,
+        "mysql_alias": mysql_id,
+        "mysql_tarball_path": install_file,
+        "install_standard": "uguard_semi_sync",
+        "init_data": init_data,
+        "extranet_root_privilege": "",
+        "mysql_base_path": mysql_master["mysql_base_path"],
+        "mysql_data_path": mysql_master["mysql_data_path"],
+        "mysql_binlog_path": mysql_master["mysql_binlog_path"],
+        "mysql_relaylog_path": mysql_master["mysql_relaylog_path"],
+        "mysql_redolog_path": mysql_master["mysql_redolog_path"],
+        "mysql_tmp_path": mysql_master["mysql_tmp_path"],
+        "backup_path": mysql_master["backup_path"],
+        "mycnf_path": mysql_master["mycnf_path"],
+        "version": version,
+        "user_type": "single_user",
+        "run_user": "actiontech-mysql",
+        "run_user_group": "",
+        "mysql_uid": "",
+        "mysql_gid": "",
+        "mycnf_server_id": str(randint(1, 99999999999)),
+        "umask": "0640",
+        "umask_dir": "0750",
+        "mycnf_config": mycnf
+	}
+
+	mycnf = api_post(context, "database/apply_my_cnf", install_params)
+	install_params["mycnf_config"] = mycnf
+	install_params["is_sync"] = True
+	install_params["tag_list"] = "[]"
+
+	api_request_post(context, "database/add_instance", install_params)
+
+
+@when(u'I enable HA on all MySQL instance in the MySQL group')
+def step_impl(context):
+	assert context.mysql_group != None
+
+	mysql_group_id = context.mysql_group["group_id"]
+	resp = api_get(context, "database/list_instance", {
+		"group_id": mysql_group_id,
+	})
+
+	for inst in resp["data"]:
+		api_post(context, "database/start_mysql_ha_enable", {
+			"is_sync": True,
+			"group_id": mysql_group_id,
+			"mysql_id": inst["mysql_id"],
+		})
+
+@then(u'the MySQL group should have {master_count:int} running MySQL master and {slave_count:int} running MySQL slave in {duration:time}')
+def step_impl(context, master_count, slave_count, duration):
+	assert context.mysql_group != None
+
+	for i in range(1, duration * context.time_weight * 10):
+		resp = api_get(context, "database/list_instance", {
+			"group_id": context.mysql_group["group_id"],
+		})
+		condition = '.data[] | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."replication_status" == "STATUS_MYSQL_REPL_OK")'
+		masters = pyjq.all(condition + ' | select(."role" == "STATUS_MYSQL_MASTER")', resp)
+		slaves = pyjq.all(condition + ' | select(."role" == "STATUS_MYSQL_SLAVE")', resp)
+		if len(masters) == 1 and len(slaves) == 1:
+			return
+		time.sleep(0.1)
+	assert False
+
+

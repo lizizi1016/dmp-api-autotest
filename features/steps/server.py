@@ -56,6 +56,19 @@ def step_impl(context, s, comps):
     else:
         context.server = match
 
+@when(u'I found a server with component{s:s?} {comps:strings+}, except {except_servers:strings+}')
+def step_impl(context, s, comps, except_servers):
+    resp = api_get(context, "server/list", {
+        "number": context.page_size_to_select_all,
+    })
+    comp_conds = map(lambda comp: 'select(has("{0}_status"))'.format(comp), comps)
+    server_conds = map(lambda except_server: 'select(.server_id != "{0}")'.format(except_server), except_servers)
+    condition = '.data[] | ' + " | ".join(comp_conds) + " | " + " | ".join(server_conds)
+
+    match = pyjq.first(condition, resp)
+    assert match != None
+    context.server = match
+
 def get_installation_file(context, comp):
 	installation_files = api_get(context, "support/component", {
 		"pattern": comp,
