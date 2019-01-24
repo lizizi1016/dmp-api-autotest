@@ -123,126 +123,12 @@ def step_impl(context):
 	port = context.valid_port
 	install_file = get_mysql_installation_file(context)
 	version = re.match(r".*(\d+\.\d+\.\d+).*", install_file).group(1)
-	print("version")
-	print(version)
 	main_version = re.match(r"(\d+\.\d+)\.\d+", version).group(1)
 
-#TODO use readfile("./mycnfs/my.cnf." + main_version) to read mycnf
-	mycnf = """
-[mysqld]
+	mycnf = api_get(context, "support/read_umc_file", {
+		"path": "mycnfs/my.cnf." + main_version, 
+	})
 
-# DO NOT MODIFY, Universe will generate this part
-port = 3306
-server_id = 123456
-basedir = /opt/mysql/base
-datadir = /opt/mysql/data/3306
-log_bin = /opt/mysql/binlog/3306
-tmpdir = /opt/mysql/tmp/3306
-relay_log = /opt/mysql/relaylog/3306
-innodb_log_group_home_dir = /opt/mysql/innodblog/3306
-log_error = mysql-error.log
-report_host = 127.0.0.1
-
-# BINLOG
-binlog_error_action = ABORT_SERVER
-binlog_format = row
-binlog_rows_query_log_events = 1
-log_slave_updates = 1
-master_info_repository = TABLE
-max_binlog_size = 250M
-relay_log_info_repository = TABLE
-relay_log_recovery = 1
-sync_binlog = 1
-
-# GTID #
-gtid_mode = ON
-enforce_gtid_consistency = 1
-
-# ENGINE
-default_storage_engine = InnoDB
-innodb_buffer_pool_size = 128M
-innodb_data_file_path = ibdata1:1G:autoextend
-innodb_file_per_table = 1
-innodb_flush_log_at_trx_commit=1
-innodb_flush_method = O_DIRECT
-innodb_io_capacity = 1000
-innodb_log_buffer_size = 64M
-innodb_log_file_size = 2G
-innodb_log_files_in_group = 2
-innodb_max_dirty_pages_pct = 60
-innodb_print_all_deadlocks=1
-innodb_stats_on_metadata = 0
-innodb_strict_mode = 1
-#innodb_undo_logs=128 #Deprecated In 5.7.19
-#innodb_undo_tablespaces=3 #Deprecated In 5.7.21
-innodb_max_undo_log_size=4G
-innodb_undo_log_truncate=1
-innodb_read_io_threads = 8
-innodb_write_io_threads = 8
-innodb_purge_threads = 8
-innodb_buffer_pool_load_at_startup = 1
-innodb_buffer_pool_dump_at_shutdown = 1
-innodb_buffer_pool_dump_pct=25
-innodb_sort_buffer_size = 8M
-#innodb_page_cleaners = 8
-#innodb_buffer_pool_instances = 8
-
-# CACHE
-key_buffer_size = 32M
-tmp_table_size = 32M
-max_heap_table_size = 32M
-table_open_cache = 1024
-query_cache_type = 0
-query_cache_size = 0
-max_connections = 2000
-thread_cache_size = 1024
-open_files_limit = 65535
-binlog_cache_size = 1M
-join_buffer_size = 8M
-sort_buffer_size = 8M
-
-# SLOW LOG
-slow_query_log = 1
-slow_query_log_file = mysql-slow.log
-log_slow_admin_statements = 1
-log_slow_slave_statements = 1
-long_query_time  = 1
-
-# SEMISYNC #
-plugin_load = "rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so"
-rpl_semi_sync_master_enabled = 1
-rpl_semi_sync_slave_enabled = 0
-rpl_semi_sync_master_wait_for_slave_count = 1
-rpl_semi_sync_master_wait_no_slave = 0
-rpl_semi_sync_master_timeout = 300000 # 5 minutes
-
-# CLIENT_DEPRECATE_EOF
-session_track_schema = 1
-session_track_state_change = 1
-session_track_system_variables = '*'
-
-# MISC
-log_timestamps=SYSTEM
-lower_case_table_names = 1
-max_allowed_packet = 64M
-read_only = 0
-skip_external_locking = 1
-skip_name_resolve = 1
-skip_slave_start = 1
-socket = mysqld.sock
-pid_file = mysqld.pid
-disabled_storage_engines = ARCHIVE,BLACKHOLE,EXAMPLE,FEDERATED,MEMORY,MERGE,NDB
-log-output = TABLE,FILE
-character_set_server = utf8mb4
-secure_file_priv = ""
-performance-schema-instrument='wait/lock/metadata/sql/mdl=ON'
-expire_logs_days = 14
-
-# MTS
-slave-parallel-type=LOGICAL_CLOCK
-slave_parallel_workers=16
-slave_preserve_commit_order=1
-"""
 	install_params = {
 		"server_id": context.server["server_id"],
         "group_id": context.mysql_group["group_id"],
@@ -291,3 +177,24 @@ def get_mysql_installation_file(context):
 	})
 	assert len(resp) > 0
 	return resp[-1]["Name"]
+
+
+@then(u'the MySQL group should have {expect_count:int} running MySQL instance in {duration:time}')
+def step_impl(context, expect_count, duration):
+	assert context.mysql_group != None
+	resp = api_get(context, "database/list_instance", {
+		"group_id": context.mysql_group["group_id"],
+	})
+	data = resp["data"]
+	assert len(data) == expect_count
+
+	for i in range(1, duration * context.time_weight * 10):
+		resp = api_get(context, "database/list_instance", {
+			"group_id": context.mysql_group["group_id"],
+		})
+		condition = '.data[] | select(."mysql_status" != "STATUS_MYSQL_HEALTH_OK" or ."replication_status" != "STATUS_MYSQL_REPL_OK")'
+		match = pyjq.first(condition, resp)
+		if match == None:
+			return
+		time.sleep(0.1)
+	assert False

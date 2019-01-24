@@ -1,6 +1,6 @@
 Feature: database
 
-	@test @case.272
+	@test @case.272 @wip
 	Scenario: database/add_group should succeed
 	  When I found a valid SIP, or I skip the test
 	  And I add a MySQL group with the SIP
@@ -21,4 +21,4 @@ Feature: database
 	  And I found a valid MySQL port, or I skip the test
 	  And I add MySQL instance in the MySQL group
 	  Then the response is ok
-	  # And the MySQL group should have 1 running MySQL instance
+	  And the MySQL group should have 1 running MySQL instance in 11s
