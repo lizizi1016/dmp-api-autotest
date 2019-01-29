@@ -33,7 +33,7 @@ def step_impl(context, option, option_value):
 def step_impl(context, duration):
 	for i in range(1, duration * context.time_weight * 10):
 		resp = api_get(context, "modify_config/query_result")
-		condition = '. | any(select(."result" == "processing"))'
+		condition = '. | any(select(."result" == "processing") or (has("result") | not))'
 		any_processing = pyjq.first(condition, resp)
 		if not any_processing:
 			return
