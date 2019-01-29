@@ -40,3 +40,25 @@ Feature: database
 	  When I enable HA on all MySQL instance in the MySQL group
 	  Then the response is ok
 	  And the MySQL group should have 1 running MySQL master and 1 running MySQL slave in 30s
+
+
+	@test @case.272
+	Scenario: database/remove instance should succeed
+	  When I found a valid MySQL instance, or I skip the test
+	  And I remove MySql instance
+	  Then the response is ok
+	  And the MySQL instance list should not contains the MySQL instance
+
+    @test @case.272
+	Scenario: database/manual backup instance should succeed
+      When I found a valid MySQL instance, or I skip the test
+	  And I manual backup for MySql instance
+	  Then the response is ok
+	  And the MySQL instance manual backup list should contains the MySQL instance
+
+	@test @case.272
+	Scenario: database/start mysql instance ha enable should succeed
+	  When I found a valid MySQL instance, or I skip the test
+	  And start MySQL instance ha enable
+	  Then the response is ok
+	  And MySQL instance ha enable should started
