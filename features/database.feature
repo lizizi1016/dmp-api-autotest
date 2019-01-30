@@ -45,7 +45,7 @@ Feature: database
   @test @case.272
   Scenario: database/remove instance should succeed
     When I found a valid MySQL instance, or I skip the test
-    And I remove MySql instance
+    And I remove MySQL instance
     Then the response is ok
     And the MySQL instance list should not contains the MySQL instance
 

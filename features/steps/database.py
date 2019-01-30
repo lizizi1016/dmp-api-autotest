@@ -362,7 +362,7 @@ def step_impl(context):
 		context.mysql_instance = match
 
 
-@when(u'I remove MySql instance')
+@when(u'I remove MySQL instance')
 def step_impl(context):
 	assert context.mysql_instance != None
 
