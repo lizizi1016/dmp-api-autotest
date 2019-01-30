@@ -246,3 +246,37 @@ xb_copy_back_timeout_seconds = 21600
         "is-commit": "true",
         "backup_rule_id": backup_rule_id,
     })
+
+
+@when(u'I manual backup for MySQL instance')
+def step_impl(context):
+	assert context.mysql_instance != None
+	cnf = api_get(context, "support/read_umc_file", {
+		"path": "backupcnfs/backup.xtrabackup"
+	})
+	body = {
+		"server_id": context.mysql_instance['server_id'],
+		"mysql_id": context.mysql_instance['mysql_id'],
+		"backup_tool": "XtraBackup",
+		"backup_cnf": cnf}
+	api_request_post(context, "database/manual_backup", body)
+
+
+@then(u'the MySQL instance manual backup list should contains the urman backup set in {duration:time}')
+def step_impl(context, duration):
+	assert context.mysql_instance != None
+	mysql_id = context.mysql_instance["mysql_id"]
+	resp = api_get(context, "urman_backupset/list", {
+		"instance": mysql_id,
+	})
+	origin_id = pyjq.first('.data[] | .backup_set_id'.format(mysql_id), resp)
+
+	for i in range(1, duration * context.time_weight):
+		resp = api_get(context, "urman_backupset/list", {
+			"instance": mysql_id,
+		})
+		id = pyjq.first('.data[] | .backup_set_id'.format(mysql_id), resp)
+		if id != origin_id:
+			return
+		time.sleep(1)
+	assert False

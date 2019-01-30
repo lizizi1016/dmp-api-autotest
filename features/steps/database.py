@@ -389,36 +389,6 @@ def step_impl(context):
 	assert not match
 
 
-@when(u'I manual backup for MySql instance')
-def step_impl(context):
-	assert context.mysql_instance != None
-	body = {
-		"server_id": context.mysql_instance['server_id'],
-		"mysql_id": context.mysql_instance['mysql_id'],
-		"backup_tool": "XtraBackup",
-		"backup_cnf": "[global]\nbackup_lock_path = ./backup_lock\n[mysql_backup]\nxb_defaults = --use-memory=200MB --tmpdir={} --ftwrl-wait-timeout=120 --ftwrl-wait-threshold=120 --kill-long-queries-timeout=60 --kill-long-query-type=all --ftwrl-wait-query-type=all --no-version-check\nxb_backup_to_image = --defaults-file={} --host={} --port={} --user={} --compress --throttle=300 --no-timestamp --stream=xbstream\nxb_incremental_backup_to_image = --defaults-file={} --host={} --port={} --user={} --incremental --incremental-lsn={} --compress --throttle=300 --no-timestamp --stream=xbstream\nxb_image_to_backup_dir = -x\nxb_decompress = --decompress\nxb_full_apply_log = --defaults-file={} --apply-log\nxb_apply_incremental_backup = --defaults-file={} --apply-log --incremental-dir={}\nxb_copy_back = --defaults-file={} --force-non-empty-directories --move-back\n\nxb_backup_to_image_timeout_seconds = 21600\nxb_incremental_backup_to_image_timeout_seconds = 21600\nxb_image_to_backup_dir_timeout_seconds = 21600\nxb_decompress_seconds = 21600\nxb_full_apply_log_timeout_seconds = 21600\nxb_apply_incremental_backup_timeout_seconds = 21600\nxb_copy_back_timeout_seconds = 21600"
-	}
-	api_request_post(context, "database/manual_backup", body)
-	time.sleep(context.time_weight * 10)
-
-
-@then(u'the MySQL instance manual backup list should contains the MySQL instance')
-def step_impl(context):
-	assert context.mysql_instance != None
-	mysql_id = context.mysql_instance["mysql_id"]
-
-	resp = api_get(context, "database/list_instance", {
-		"number": context.page_size_to_select_all,
-	})
-	match = pyjq.first('.data[] | select(."mysql_id" == "{0}")'.format(mysql_id), resp)
-	backup_set_resp = api_get(context, "urman_backupset/list", {
-		"number": context.page_size_to_select_all,
-	})
-	has_match = pyjq.first('.data[] | select(."backup_time" == "{0}")'.format(match["backup_status"]), backup_set_resp)
-
-	assert len(has_match) > 1
-
-
 @when(u'start MySQL instance ha enable')
 def step_impl(context):
 	assert context.mysql_instance != None
