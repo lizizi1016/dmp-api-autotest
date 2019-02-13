@@ -400,3 +400,30 @@ def step_imp(context):
 	if match['uguard_status'] == "UGUARD_ENABLE":
 		return
 	assert False
+
+
+@when(u'I configure MySQL group SIP')
+def step_imp(context):
+    assert context.mysql_group != None
+    assert context.valid_sip != None
+    body = {
+        "group_id": context.mysql_group['group_id'],
+        "sip": context.valid_sip
+    }
+    api_request_post(context, "database/update_mysql_sip", body)
+
+@then(u'update MySQL group SIP successful in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_group != None
+
+    assert context.valid_sip != None
+    mysql_group_id = context.mysql_group["group_id"]
+    for i in range(1, duration * context.time_weight):
+        resp = api_get(context, "database/list_group", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first('.data[] | select(.group_id == "{0}")'.format(mysql_group_id), resp)
+        if context.valid_sip == match['sip']:
+            return
+        time.sleep(1)
+    assert False

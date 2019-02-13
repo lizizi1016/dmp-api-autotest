@@ -55,3 +55,11 @@ Feature: database
     And start MySQL instance ha enable
     Then the response is ok
     And MySQL instance ha enable should started
+
+  @test @case.272
+  Scenario: database/configure group SIP
+    When I found a running MySQL instance, or I skip the test
+    And I found a MySQL group without MySQL instance, or I skip the test
+    And I configure MySQL group SIP
+    Then the response is ok
+    And update MySQL group SIP successful in 1m
