@@ -248,20 +248,6 @@ xb_copy_back_timeout_seconds = 21600
     })
 
 
-@when(u'I manual backup for MySQL instance')
-def step_impl(context):
-	assert context.mysql_instance != None
-	cnf = api_get(context, "support/read_umc_file", {
-		"path": "backupcnfs/backup.xtrabackup"
-	})
-	body = {
-		"server_id": context.mysql_instance['server_id'],
-		"mysql_id": context.mysql_instance['mysql_id'],
-		"backup_tool": "XtraBackup",
-		"backup_cnf": cnf}
-	api_request_post(context, "database/manual_backup", body)
-
-
 @then(u'the MySQL instance manual backup list should contains the urman backup set in {duration:time}')
 def step_impl(context, duration):
 	assert context.mysql_instance != None
