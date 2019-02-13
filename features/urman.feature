@@ -29,7 +29,7 @@ Feature: urman
 
     @test @case.272
     Scenario: database/manual backup instance should succeed
-      When I found a valid MySQL instance, or I skip the test
+      When I found a running MySQL instance, or I skip the test
       And I manual backup for MySQL instance
       Then the response is ok
       And the MySQL instance manual backup list should contains the urman backup set in 2m

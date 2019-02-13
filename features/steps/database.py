@@ -350,18 +350,6 @@ def step_impl(context, master_count, slave_count, duration):
 	assert False
 
 
-@when(u'I found a valid MySQL instance, or I skip the test')
-def step_impl(context):
-	resp = api_get(context, "database/list_instance", {
-		"number": context.page_size_to_select_all,
-	})
-	match = pyjq.first('.data[] | select(.mysql_status == "STATUS_MYSQL_HEALTH_OK")', resp)
-	if match is None:
-		context.scenario.skip("Found no MySQL group without MySQL instance")
-	else:
-		context.mysql_instance = match
-
-
 @when(u'I remove MySQL instance')
 def step_impl(context):
 	assert context.mysql_instance != None

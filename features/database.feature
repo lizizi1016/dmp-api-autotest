@@ -44,14 +44,14 @@ Feature: database
 
   @test @case.272
   Scenario: database/remove instance should succeed
-    When I found a valid MySQL instance, or I skip the test
+    When I found a running MySQL instance, or I skip the test
     And I remove MySQL instance
     Then the response is ok
     And the MySQL instance list should not contains the MySQL instance
 
   @test @case.272
   Scenario: database/start MySQL instance ha enable should succeed
-    When I found a valid MySQL instance, or I skip the test
+    When I found a running MySQL instance, or I skip the test
     And start MySQL instance ha enable
     Then the response is ok
     And MySQL instance ha enable should started
