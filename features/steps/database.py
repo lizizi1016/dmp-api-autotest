@@ -362,19 +362,18 @@ def step_impl(context):
 	}
 	api_request_post(context, "database/delete_instance", body)
 
-	time.sleep(context.time_weight * 10)
 
-
-@then(u'the MySQL instance list should not contains the MySQL instance')
-def step_impl(context):
-	assert context.mysql_instance != None
-	mysql_id = context.mysql_instance["mysql_id"]
-
-	resp = api_get(context, "database/list_instance", {
-		"number": context.page_size_to_select_all,
-	})
-	match = pyjq.first('.data | any(."mysql_id" == "{0}")'.format(mysql_id), resp)
-	assert not match
+@then(u'the MySQL instance list should not contains the MySQL instance in {duration:time}')
+def step_impl(context, duration):
+    assert context.mysql_instance != None
+    mysql_id = context.mysql_instance["mysql_id"]
+    def condition(context, flag):
+        resp = api_get(context, "database/list_instance", {
+            "number": context.page_size_to_select_all})
+        match = pyjq.first('.data | any(."mysql_id" == "{0}")'.format(mysql_id), resp)
+        if match is not True:
+            return True
+    waitfor(context, condition, duration)
 
 
 @when(u'start MySQL instance ha enable')
@@ -386,8 +385,6 @@ def step_impl(context):
 		"mysql_id": context.mysql_instance['mysql_id']
 	}
 	api_request_post(context, "database/start_mysql_ha_enable", body)
-	time.sleep(context.time_weight * 2)
-
 
 @then(u'MySQL instance ha enable should started')
 def step_imp(context):
@@ -415,15 +412,101 @@ def step_imp(context):
 @then(u'update MySQL group SIP successful in {duration:time}')
 def step_imp(context, duration):
     assert context.mysql_group != None
-
     assert context.valid_sip != None
     mysql_group_id = context.mysql_group["group_id"]
-    for i in range(1, duration * context.time_weight):
+    def condition(context, flag):
         resp = api_get(context, "database/list_group", {
-            "number": context.page_size_to_select_all,
-        })
+			"number": context.page_size_to_select_all,
+		})
         match = pyjq.first('.data[] | select(.group_id == "{0}")'.format(mysql_group_id), resp)
         if context.valid_sip == match['sip']:
-            return
-        time.sleep(1)
-    assert False
+            return True
+	waitfor(context, condition, duration)
+
+@when(u'stop MySQL instance ha enable')
+def step_impl(context):
+	assert context.mysql_instance != None
+	body = {
+		"server_id": context.mysql_instance['server_id'],
+		"group_id": context.mysql_instance['group_id'],
+		"mysql_id": context.mysql_instance['mysql_id']
+	}
+	api_request_post(context, "database/stop_mysql_ha_enable", body)
+
+@then(u'MySQL instance ha enable should stopped')
+def step_imp(context):
+	assert context.mysql_instance != None
+	mysql_id = context.mysql_instance["mysql_id"]
+	resp = api_get(context, "database/list_instance", {
+		"number": context.page_size_to_select_all,
+	})
+	match = pyjq.first('.data[] | select(."mysql_id" == "{0}")'.format(mysql_id), resp)
+	if match['uguard_status'] == "MANUAL_EXCLUDE_HA":
+		return
+	assert False
+
+@when(u'I found a running MySQL instance and uguard enable,or I skip the test')
+def step_impl(context):
+	mysqls = api_get(context, "database/list_instance", {
+		"number": context.page_size_to_select_all,
+	})
+	mysql = pyjq.first('.data[] | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."uguard_status" == "UGUARD_ENABLE")', mysqls)
+	if mysql is None:
+		context.scenario.skip("Found no MySQL instance UGUARD_ENABLE")
+		return
+
+	root_password = api_get(context, "helper/get_mysql_password", {
+		"mysql_id": mysql["mysql_id"],
+		"password_type": "ROOT",
+	})
+	mysql["root_password"] = root_password
+	context.mysql_instance = mysql
+
+@when(u'stop MySQL service')
+def step_imp(context):
+    assert context.mysql_instance != None
+    body = {
+		"server_id": context.mysql_instance['server_id'],
+		"mysql_id": context.mysql_instance['mysql_id']
+	}
+    api_request_post(context, "database/stop_mysql_service", body)
+
+@then(u'stop MySQL service should succeed in {duration:time}')
+def step_imp(context,duration):
+    assert context.mysql_instance !=None
+    def condition(context, flag):
+        resp = api_get(context, "database/list_instance", {
+            "number": context.page_size_to_select_all,
+		})
+        match = pyjq.first('.data[] | select(.mysql_status == "STATUS_MYSQL_HEALTH_BAD")', resp)
+        if match is not None:
+            return True
+    waitfor(context, condition, duration)
+
+@when(u'reset database instance')
+def step_imp(context):
+	assert context.mysql_instance != None
+	resp = api_get(context, "support/init_data", {
+		"group_id": context.mysql_instance['group_id'],
+	})
+	assert len(resp) > 0
+	init_data = resp[-1]["name"]
+	body = {
+		"server_id": context.mysql_instance['server_id'],
+		"mysql_id": context.mysql_instance['mysql_id'],
+		"origin_data": init_data
+	}
+	api_request_post(context, "database/reset_database_instance", body)
+
+@then(u'reset database instance should succeed in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_instance != None
+    def condition(context, flag):
+        resp = api_get(context, "database/list_instance", {
+			"number": context.page_size_to_select_all,
+		})
+        match = pyjq.first('.data[] | select(.mysql_status == "STATUS_MYSQL_HEALTH_OK" '
+						   'and ."mysql_id" == "{0}")'.format(context.mysql_instance['mysql_id']), resp)
+        if match is not None:
+            return True
+    waitfor(context, condition, duration)

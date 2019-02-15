@@ -4,7 +4,7 @@ import pyjq
 import json
 import time
 from datetime import datetime
-
+from util import *
 use_step_matcher("cfparse")
 
 @when(u'I found a MySQL instance without backup rule, or I skip the test')
@@ -255,14 +255,13 @@ def step_impl(context, duration):
 	resp = api_get(context, "urman_backupset/list", {
 		"instance": mysql_id,
 	})
-	origin_id = pyjq.first('.data[] | .backup_set_id'.format(mysql_id), resp)
-
-	for i in range(1, duration * context.time_weight):
+	origin_id = pyjq.first('.data[] | .backup_set_id', resp)
+	def condition(context, flag):
 		resp = api_get(context, "urman_backupset/list", {
 			"instance": mysql_id,
 		})
-		id = pyjq.first('.data[] | .backup_set_id'.format(mysql_id), resp)
+		id = pyjq.first('.data[] | .backup_set_id', resp)
 		if id != origin_id:
-			return
-		time.sleep(1)
-	assert False
+			return True
+	waitfor(context, condition, duration)
+

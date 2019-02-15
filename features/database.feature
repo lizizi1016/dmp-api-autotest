@@ -47,7 +47,7 @@ Feature: database
     When I found a running MySQL instance, or I skip the test
     And I remove MySQL instance
     Then the response is ok
-    And the MySQL instance list should not contains the MySQL instance
+    And the MySQL instance list should not contains the MySQL instance in 1m
 
   @test @case.272
   Scenario: database/start MySQL instance ha enable should succeed
@@ -57,9 +57,37 @@ Feature: database
     And MySQL instance ha enable should started
 
   @test @case.272
+  Scenario: database/stop MySQL instance ha enable should succeed
+    When I found a running MySQL instance and uguard enable,or I skip the test
+    And stop MySQL instance ha enable
+    Then the response is ok
+    And MySQL instance ha enable should stopped
+
+  @test @case.272
   Scenario: database/configure group SIP
     When I found a running MySQL instance, or I skip the test
     And I found a MySQL group without MySQL instance, or I skip the test
     And I configure MySQL group SIP
     Then the response is ok
     And update MySQL group SIP successful in 1m
+
+  @test @case.272
+  Scenario: database/stop MySQL service
+    When I found a running MySQL instance, or I skip the test
+    And stop MySQL service
+    Then the response is ok
+    And stop MySQL service should succeed in 1m
+
+  @test @case.272
+  Scenario: 103 database/reset database instance
+    When I found a running MySQL instance, or I skip the test
+    And I make a manual backup on the MySQL instance
+    Then the response is ok
+
+    When stop MySQL service
+    Then the response is ok
+    And stop MySQL service should succeed in 1m
+
+    When reset database instance
+    Then the response is ok
+    And reset database instance should succeed in 2m
