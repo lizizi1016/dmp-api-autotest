@@ -510,3 +510,131 @@ def step_imp(context, duration):
         if match is not None:
             return True
     waitfor(context, condition, duration)
+
+@when(u'I found one group high availability instance')
+def step_imp(context):
+    res = api_get(context, "database/list_group", {
+		"number": context.page_size_to_select_all,
+	})
+    match = pyjq.first('.data[] | select(.group_instance_num > "1")', res)
+    if match is None:
+        context.scenario.skip("Found no MySQL group without MySQL high availability instance")
+    else:
+        context.mysql_group = match
+
+    resp = api_get(context, "database/list_instance", {
+		"group_id": context.mysql_group["group_id"],
+	})
+    condition = '.data[] | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."replication_status" == "STATUS_MYSQL_REPL_OK")'
+    masters = pyjq.all(condition + ' | select(."role" == "STATUS_MYSQL_MASTER")', resp)
+    slaves = pyjq.all(condition + ' | select(."role" == "STATUS_MYSQL_SLAVE")', resp)
+    if len(masters) == 1 and len(slaves) > 0:
+        return
+    assert False
+
+@when(u'promote slave instance to master')
+def step_imp(context):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+		"group_id": context.mysql_group["group_id"],
+	})
+    the_slave = pyjq.first('.data[]|select(."role" == "STATUS_MYSQL_SLAVE")', resp)
+    body = {"mysql_id":the_slave['mysql_id']}
+    api_request_post(context, "database/promote_to_master", body)
+    context.slave_instance = the_slave
+
+@then(u'promote slave instance to master should succeed in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_group != None
+
+    def condition(context, flag):
+        resp = api_get(context, "database/list_instance", {
+			"group_id": context.mysql_group["group_id"],
+		})
+        condition = '.data[] | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."replication_status" == "STATUS_MYSQL_REPL_OK" and ."sip" == "(SIP)")'
+        masters = pyjq.all(condition + ' | select(."role" == "STATUS_MYSQL_MASTER" and ."mysql_id" =="{0}")'.format(context.slave_instance['mysql_id']), resp)
+
+        if len(masters) == 1:
+            return True
+    waitfor(context, condition, duration)
+
+@when(u'I query the slave instance "{query}"')
+def step_impl(context, query):
+	assert context.mysql_group != None
+	resp = api_get(context, "database/list_instance", {
+		"group_id": context.mysql_group["group_id"],
+	})
+	the_slave = pyjq.first('.data[]|select(."role" == "STATUS_MYSQL_SLAVE")', resp)
+	master = pyjq.first('.data[]|select(."role" == "STATUS_MYSQL_MASTER")', resp)
+
+	root_password = api_get(context, "helper/get_mysql_password", {
+		"mysql_id": master["mysql_id"],
+		"password_type": "ROOT",
+	})
+	master["root_password"] = root_password
+
+	resp = api_get(context, "helper/query_mysql", {
+		"mysql_id": the_slave["mysql_id"],
+		"query": query,
+		"user": "root",
+		"password": master["root_password"],
+	})
+	context.mysql_resp = resp
+
+
+@when(u'I execution action the MySQL instance "{option}"')
+def step_impl(context, option):
+	assert context.mysql_instance != None
+	mysql = context.mysql_instance
+
+	resp = api_get(context, "helper/query_mysql", {
+		"mysql_id": mysql["mysql_id"],
+		"query": option,
+		"user": "root",
+		"password": mysql["root_password"],
+	})
+
+
+@when(u'I add sla protocol')
+def step_imp(context):
+	assert context.mysql_instance != None
+	body = {
+		"group_id": context.mysql_instance['group_id'],
+		"add_sla_template": "SLA_RPO_sample",
+		"is_sync": "true",
+	}
+	api_request_post(context, "/database/add_sla_protocol", body)
+
+@then(u'sla protocol should add succeed in {duration:time}')
+def step_imp(context, duration):
+	assert context.mysql_instance != None
+	def condition(context, flag):
+		res = api_get(context, "database/list_group", {
+			"number": context.page_size_to_select_all,
+		})
+		match = pyjq.first('.data[] | select(.group_id == "{0}")'.format(context.mysql_instance["group_id"]), res)
+		print ("output result:")
+		print (match)
+		if match['sla_template'] == "SLA_RPO_sample":
+			return True
+	waitfor(context, condition, duration)
+
+@when(u'I start sla protocol')
+def step_imp(context):
+	assert context.mysql_instance != None
+	api_request_post(context, "/database/start_sla_protocol",{
+		"group_id": context.mysql_instance['group_id'],
+		"is_sync": "true",
+	})
+
+@then(u'sla protocol should started')
+def step_imp(context):
+	assert context.mysql_instance != None
+	res = api_get(context, "database/list_group", {
+		"number": context.page_size_to_select_all,
+	})
+	match = pyjq.first('.data[] | select(.group_id == "{0}")'.format(context.mysql_instance["group_id"]), res)
+	if match['sla_enable'] == "ENABLE":
+		return
+	assert False
+

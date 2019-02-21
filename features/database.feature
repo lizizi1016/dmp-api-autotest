@@ -79,7 +79,7 @@ Feature: database
     And stop MySQL service should succeed in 1m
 
   @test @case.272
-  Scenario: 103 database/reset database instance
+  Scenario: database/reset database instance
     When I found a running MySQL instance, or I skip the test
     And I make a manual backup on the MySQL instance
     Then the response is ok
@@ -91,3 +91,43 @@ Feature: database
     When reset database instance
     Then the response is ok
     And reset database instance should succeed in 2m
+
+  @test @case.272
+  Scenario: database/promote to master
+    When I found one group high availability instance
+    And promote slave instance to master
+    Then the response is ok
+    And promote slave instance to master should succeed in 1m
+
+  @test @case.272
+  Scenario Outline: view slave staus
+    When I found one group high availability instance
+    And I query the slave instance "SELECT SERVICE_STATE FROM performance_schema.<option>"
+    Then the MySQL response should be
+      |SERVICE_STATE|
+      |ON           |
+  Examples:
+        | option                        |
+        | replication_connection_status |
+        | replication_applier_status    |
+
+  @test @case.272
+  Scenario: create table in instance
+    When I found a running MySQL instance, or I skip the test
+    And I Execution action the MySQL instance "use mysql;create table testcase(id int auto_increment not null primary key ,uname char(8),gender char(2),birthday date );"
+    And I query the MySQL instance "select table_name from information_schema.tables where table_name="testcase";"
+    Then the MySQL response should be
+      | table_name |
+      | testcase   |
+    When I Execution action the MySQL instance "use mysql;DROP TABLE testcase;"
+
+  @test
+  Scenario: database/add sla protocol and start
+    When I found a running MySQL instance, or I skip the test
+    And I add sla protocol
+    Then the response is ok
+    And sla protocol should add succeed in 1m
+
+    When I start sla protocol
+    Then the response is ok
+    And sla protocol should started
