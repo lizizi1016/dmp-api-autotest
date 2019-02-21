@@ -62,3 +62,10 @@ def find_valid_ports(context, excepts = []):
 
         return port
     return None
+
+def get_installation_file(context, pattern):
+    resp = api_get(context, "support/component", {
+        "pattern": pattern,
+    })
+    assert len(resp) > 0
+    return resp[-1]["Name"]

@@ -185,12 +185,7 @@ def step_impl(context):
 	api_request_post(context, "database/add_instance", install_params)
 
 def get_mysql_installation_file(context):
-	resp = api_get(context, "support/component", {
-		"pattern": "mysql",
-	})
-	assert len(resp) > 0
-	return resp[-1]["Name"]
-
+	return get_installation_file(context, "mysql")
 
 @then(u'the MySQL group should have {expect_count:int} running MySQL instance in {duration:time}')
 def step_impl(context, expect_count, duration):

@@ -2,6 +2,7 @@ from behave import *
 from framework.api import *
 import pyjq
 import time
+import random
 
 use_step_matcher("cfparse")
 
