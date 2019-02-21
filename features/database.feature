@@ -24,7 +24,7 @@ Feature: database
   Scenario: add database instances of m-s should succeed
     When I found a MySQL group without MySQL instance, and without SIP, or I skip the test
     And I found a server with components ustats,udeploy,uguard-agent,urman-agent, or I skip the test
-    And I found a valid MySQL port, or I skip the test
+    And I found a valid port, or I skip the test
     And I add MySQL instance in the MySQL group
     Then the response is ok
     And the MySQL group should have 1 running MySQL instance in 11s

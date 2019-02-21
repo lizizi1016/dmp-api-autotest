@@ -122,19 +122,6 @@ def step_impl(context):
 		"group_id": mysql_group_id,
 	})
 
-@when(u'I found a valid MySQL port, or I skip the test')
-def step_impl(context):
-	for _ in range(1,1024):
-		port = randint(6000, 65535)
-		resp = api_get(context, "database/list_instance", {
-			"port": str(port),
-		})
-		if len(resp["data"]) == 0:
-			context.valid_port = str(port)
-			return
-
-	context.scenario.skip("Found no valid MySQL port")
-
 @when(u'I add MySQL instance in the MySQL group')
 def step_impl(context):
 	assert context.mysql_group != None
@@ -421,7 +408,7 @@ def step_imp(context, duration):
         match = pyjq.first('.data[] | select(.group_id == "{0}")'.format(mysql_group_id), resp)
         if context.valid_sip == match['sip']:
             return True
-	waitfor(context, condition, duration)
+    waitfor(context, condition, duration)
 
 @when(u'stop MySQL instance ha enable')
 def step_impl(context):

@@ -52,7 +52,7 @@ Feature: prepare
 
 	  When I found a MySQL group without MySQL instance, and without SIP, or I skip the test
 	  And I found a server with components uguard-agent,urman-agent,ustats,udeploy, or I skip the test
-	  And I found a valid MySQL port, or I skip the test
+	  And I found a valid port, or I skip the test
 	  And I add MySQL instance in the MySQL group
 	  Then the response is ok
 	  And the MySQL group should have 1 running MySQL instance in 11s
@@ -74,7 +74,7 @@ Feature: prepare
 	  And the MySQL group list should contains the MySQL group
 	  When I found a MySQL group without MySQL instance, and without SIP, or I skip the test
 	  And I found a server with components uguard-agent,urman-agent,ustats,udeploy, or I skip the test
-	  And I found a valid MySQL port, or I skip the test
+	  And I found a valid port, or I skip the test
 	  And I add MySQL instance in the MySQL group
 	  Then the response is ok
 	  And the MySQL group should have 1 running MySQL instance in 11s
