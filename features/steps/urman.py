@@ -205,6 +205,10 @@ def step_impl(context, delta_minutes):
 	ts = datetime.now()
 	newMinute = (ts.minute + delta_minutes * context.time_weight) % 60
 	cron = "0 {0} * * * ?".format(newMinute)
+
+	cnf = api_get(context, "support/read_umc_file", {
+		"path": "backupcnfs/backup.xtrabackup", 
+	})
 	
 	resp = api_post(context, "urman_rule/update_backup_rule", {
         "backup_rule_id": backup_rule_id,
@@ -217,26 +221,7 @@ def step_impl(context, delta_minutes):
         "maintain_start_cron": "0 0 0 1/1 * ?",
         "maintain_duration_time": "1440m",
         "backup_tool": "XtraBackup",
-        "backup_cnf":'''[global]
-backup_lock_path = ./backup_lock
-[mysql_backup]
-xb_defaults = --use-memory=200MB --tmpdir={} --ftwrl-wait-timeout=120 --ftwrl-wait-threshold=120 --kill-long-queries-timeout=60 --kill-long-query-type=all --ftwrl-wait-query-type=all --no-version-check
-xb_backup_to_image = --defaults-file={} --host={} --port={} --user={} --compress --throttle=300 --no-timestamp --stream=xbstream
-xb_incremental_backup_to_image = --defaults-file={} --host={} --port={} --user={} --incremental --incremental-lsn={} --compress --throttle=300 --no-timestamp --stream=xbstream
-xb_image_to_backup_dir = -x
-xb_decompress = --decompress
-xb_full_apply_log = --defaults-file={} --apply-log
-xb_apply_incremental_backup = --defaults-file={} --apply-log --incremental-dir={}
-xb_copy_back = --defaults-file={} --force-non-empty-directories --move-back
-
-xb_backup_to_image_timeout_seconds = 21600
-xb_incremental_backup_to_image_timeout_seconds = 21600
-xb_image_to_backup_dir_timeout_seconds = 21600
-xb_decompress_seconds = 21600
-xb_full_apply_log_timeout_seconds = 21600
-xb_apply_incremental_backup_timeout_seconds = 21600
-xb_copy_back_timeout_seconds = 21600
-''',
+        "backup_cnf": cnf,
 		"only_slave": "false",
 		"only_master": "false"
     })

@@ -55,7 +55,7 @@ def step_impl(context):
 	assert context.valid_sip != None
 	sip = context.valid_sip
 
-	mysql_group_id = "mysql-group-" + str(int(time.time()))
+	mysql_group_id = "mysql-group-" + generate_id()
 
 	api_request_post(context, "database/add_group", {
 		"is_sync": True,
@@ -68,7 +68,7 @@ def step_impl(context):
 
 @when(u'I add a MySQL group')
 def step_impl(context):
-	mysql_group_id = "mysql-group-" + str(int(time.time()))
+	mysql_group_id = "mysql-group-" + generate_id()
 
 	api_request_post(context, "database/add_group", {
 		"is_sync": True,
@@ -106,7 +106,7 @@ def step_impl(context):
 	resp = api_get(context, "database/list_group", {
 		"number": context.page_size_to_select_all,
 	})
-	match = pyjq.first('.data[] | select(.group_instance_num == "0"))', resp)
+	match = pyjq.first('.data[] | select(.group_instance_num == "0")', resp)
 	if match is None:
 		context.scenario.skip("Found no MySQL group without MySQL instance")
 	else:
@@ -141,7 +141,7 @@ def step_impl(context):
 	assert context.valid_port != None
 	assert context.server != None
 	mysql_group_id = context.mysql_group["group_id"]
-	mysql_id = "mysql-" + str(int(time.time()))
+	mysql_id = "mysql-" + generate_id()
 	mysql_dir = context.mysql_installation_dir
 	port = context.valid_port
 	install_file = get_mysql_installation_file(context)
@@ -184,7 +184,7 @@ def step_impl(context):
         "run_user_group": "",
         "mysql_uid": "",
         "mysql_gid": "",
-        "mycnf_server_id": str(randint(1, 99999999999)),
+        "mycnf_server_id": str(randint(1, 4294967295)),
         "umask": "0640",
         "umask_dir": "0750",
         "mycnf_config": mycnf
@@ -271,7 +271,7 @@ def step_impl(context):
 	init_data = resp[-1]["name"]
 
 
-	mysql_id = "mysql-" + str(int(time.time()))
+	mysql_id = "mysql-" + generate_id()
 	port = mysql_master["port"]
 	install_file = get_mysql_installation_file(context)
 	version = re.match(r".*(\d+\.\d+\.\d+).*", install_file).group(1)
@@ -303,7 +303,7 @@ def step_impl(context):
         "run_user_group": "",
         "mysql_uid": "",
         "mysql_gid": "",
-        "mycnf_server_id": str(randint(1, 99999999999)),
+        "mycnf_server_id": str(randint(1, 4294967295)),
         "umask": "0640",
         "umask_dir": "0750",
         "mycnf_config": mycnf

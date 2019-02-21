@@ -1,5 +1,6 @@
 import random
 import time
+
 def randint(start, end):
 	random.seed()
 	return random.randint(start, end)
@@ -13,3 +14,6 @@ def waitfor(context, getter, duration, interval=1, flag=False):
 		time.sleep(interval)
 	else:
 		raise Exception
+
+def generate_id():
+	return str(int(time.time() * 10000))
