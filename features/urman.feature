@@ -26,3 +26,10 @@ Feature: urman
 	  When I recycle the backup dir of the MySQL instance
 	  Then the response is ok
 	  And the backup dir of the MySQL instance should not exist
+
+    @test @case.272
+    Scenario: database/manual backup instance should succeed
+      When I found a running MySQL instance, or I skip the test
+      And I make a manual backup on the MySQL instance
+      Then the response is ok
+      And the MySQL instance manual backup list should contains the urman backup set in 2m
