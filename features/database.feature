@@ -94,14 +94,14 @@ Feature: database
 
   @test @case.272
   Scenario: database/promote to master
-    When I found one group high availability instance
+    When I found 1 MySQL group with HA MySQL instances, or I skip the test
     And promote slave instance to master
     Then the response is ok
     And promote slave instance to master should succeed in 1m
 
   @test @case.272
   Scenario Outline: view slave staus
-    When I found one group high availability instance
+    When I found 1 MySQL group with HA MySQL instances, or I skip the test
     And I query the slave instance "SELECT SERVICE_STATE FROM performance_schema.<option>"
     Then the MySQL response should be
       |SERVICE_STATE|

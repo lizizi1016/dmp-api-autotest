@@ -20,6 +20,15 @@ Feature: ushard
 	  Then the response is ok
 	  And the Ushard group should have 2 running Ushard instance in 11s
 
+	@test @wip
+	Scenario: add data nodes to ushard group should succeed
+	  When I found 1 Ushard group with Ushard instance, or I skip the test
+	  And I found 2 MySQL groups with MySQL HA instances, or I skip the test
+	  And I configure the Ushard group by adding 2 users to the MySQL groups
+	  Then the response is ok
+	  When I insert data to dble by user1
+	  # Then I found the data in MySQL by user1
+
 	@test
 	Scenario: remove ushard should succeed
 	  When I found a Ushard group without Ushard instance, or I skip the test

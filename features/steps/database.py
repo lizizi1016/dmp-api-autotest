@@ -494,26 +494,22 @@ def step_imp(context, duration):
             return True
     waitfor(context, condition, duration)
 
-@when(u'I found one group high availability instance')
-def step_imp(context):
+@when(u'I found {count:int} MySQL group{s:s?} with MySQL HA instances, or I skip the test')
+def step_imp(context, count, s):
     res = api_get(context, "database/list_group", {
-		"number": context.page_size_to_select_all,
-	})
-    match = pyjq.first('.data[] | select(.group_instance_num > "1")', res)
-    if match is None:
-        context.scenario.skip("Found no MySQL group without MySQL high availability instance")
-    else:
-        context.mysql_group = match
-
-    resp = api_get(context, "database/list_instance", {
-		"group_id": context.mysql_group["group_id"],
-	})
-    condition = '.data[] | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."replication_status" == "STATUS_MYSQL_REPL_OK")'
-    masters = pyjq.all(condition + ' | select(."role" == "STATUS_MYSQL_MASTER")', resp)
-    slaves = pyjq.all(condition + ' | select(."role" == "STATUS_MYSQL_SLAVE")', resp)
-    if len(masters) == 1 and len(slaves) > 0:
+        "number": context.page_size_to_select_all,
+    })
+    matches = pyjq.all('.data[] | select(.uguard_status == "UGUARD_PRIMARY_SLAVE_ENABLE")', res)
+    if matches is None:
+        context.scenario.skip("Found no MySQL group with MySQL HA instance")
         return
-    assert False
+    if len(matches) < count:
+        context.scenario.skip("Found no enough MySQL groups with MySQL HA instance")
+        return
+    if count == 1:
+        context.mysql_group = matches
+    else:
+        context.mysql_groups = matches[:count]
 
 @when(u'promote slave instance to master')
 def step_imp(context):
@@ -541,6 +537,13 @@ def step_imp(context, duration):
             return True
     waitfor(context, condition, duration)
 
+def get_mysql_instance_root_password(context, inst_id):
+	root_password = api_get(context, "helper/get_mysql_password", {
+		"mysql_id": inst_id,
+		"password_type": "ROOT",
+	})
+	return root_password
+
 @when(u'I query the slave instance "{query}"')
 def step_impl(context, query):
 	assert context.mysql_group != None
@@ -550,11 +553,7 @@ def step_impl(context, query):
 	the_slave = pyjq.first('.data[]|select(."role" == "STATUS_MYSQL_SLAVE")', resp)
 	master = pyjq.first('.data[]|select(."role" == "STATUS_MYSQL_MASTER")', resp)
 
-	root_password = api_get(context, "helper/get_mysql_password", {
-		"mysql_id": master["mysql_id"],
-		"password_type": "ROOT",
-	})
-	master["root_password"] = root_password
+	master["root_password"] = get_mysql_instance_root_password(context, master["mysql_id"])
 
 	resp = api_get(context, "helper/query_mysql", {
 		"mysql_id": the_slave["mysql_id"],
@@ -621,3 +620,19 @@ def step_imp(context):
 		return
 	assert False
 
+def get_mysql_group_brief(context, group_id):
+	resp = api_get(context, "database/list_instance", {
+		"group_id": group_id
+	})
+	master = pyjq.first('.data[] | select(.role == "STATUS_MYSQL_MASTER")', resp)
+	assert master is not None
+	root_password = get_mysql_instance_root_password(context, master["mysql_id"])
+	slave = pyjq.first('.data[] | select(.role == "STATUS_MYSQL_SLAVE")', resp)
+	assert slave is not None
+
+	return {
+		"group_id": group_id,
+		"master_addr": master["server_addr"] + ":" + master["port"],
+		"slave_addr": slave["server_addr"] + ":" + slave["port"],
+		"root_password": root_password
+	}

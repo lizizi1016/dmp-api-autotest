@@ -16,4 +16,4 @@ def waitfor(context, getter, duration, interval=1, flag=False):
 		raise Exception
 
 def generate_id():
-	return str(int(time.time() * 10000))
+	return str(int(time.time())) + str(random.randint(0, 10000))
