@@ -47,8 +47,8 @@ def step_impl(context, should_or_not):
     })
     match = pyjq.first('.data[] | select(.group_id == "{0}")'.format(group_id),
                        resp)
-    assert (match != None and should_or_not) or (match == None
-                                                 and not should_or_not)
+    assert (match != None and should_or_not) or (match == None and
+                                                 not should_or_not)
 
 
 @when(u'I found a Ushard group without Ushard instance, or I skip the test')
@@ -359,6 +359,7 @@ def step_impl(context, user_name):
             "schema": user["schema"]
         })
 
+
 @when(u'I insert data to dble by {user_name:string}')
 def step_impl(context, user_name):
     assert context.ushard_group != None
@@ -377,6 +378,7 @@ def step_impl(context, user_name):
             "query": "insert into test (id) values({0})".format(id),
             "schema": user["schema"]
         })
+
 
 @then(u'I found the data in MySQL by {user_name:string}')
 def step_impl(context, user_name):

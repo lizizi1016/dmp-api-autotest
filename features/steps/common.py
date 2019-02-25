@@ -54,8 +54,8 @@ def find_valid_ports(context, excepts=[]):
         resp = api_get(context, "ushard/list_group", {
             "number": context.page_size_to_select_all,
         })
-        match = pyjq.first(
-            '.data[] | select(.flow_port == "{0}")'.format(port), resp)
+        match = pyjq.first('.data[] | select(.flow_port == "{0}")'.format(port),
+                           resp)
         if match != None:
             continue
         match = pyjq.first(

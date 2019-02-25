@@ -151,8 +151,7 @@ def step_impl(context, comp):
     })
     pidfile = api_get(
         context, "helper/cat", {
-            "server_id":
-            server_id,
+            "server_id": server_id,
             "file":
             context.component_installation_dir + "{0}/{0}.pid".format(comp),
         })
@@ -167,11 +166,10 @@ def step_impl(context, comp, expect_own_user, expect_own_group):
     assert context.server != None
     server_id = context.server["server_id"]
 
-    resp = api_get(
-        context, "helper/stat", {
-            "server_id": server_id,
-            "file": context.component_installation_dir + comp,
-        })
+    resp = api_get(context, "helper/stat", {
+        "server_id": server_id,
+        "file": context.component_installation_dir + comp,
+    })
 
     assert resp["own_user_name"] == expect_own_user
     assert resp["own_group_name"] == expect_own_group

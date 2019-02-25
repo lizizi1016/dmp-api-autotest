@@ -64,13 +64,12 @@ def step_impl(context):
 
     mysql_group_id = "mysql-group-" + generate_id()
 
-    api_request_post(
-        context, "database/add_group", {
-            "is_sync": True,
-            "group_id": mysql_group_id,
-            "sip": sip,
-            "tag_list": "[]",
-        })
+    api_request_post(context, "database/add_group", {
+        "is_sync": True,
+        "group_id": mysql_group_id,
+        "sip": sip,
+        "tag_list": "[]",
+    })
 
     context.mysql_group = {"group_id": mysql_group_id}
 
@@ -100,8 +99,8 @@ def step_impl(context, should_or_not):
     })
     match = pyjq.first(
         '.data[] | select(.group_id == "{0}")'.format(mysql_group_id), resp)
-    assert (match != None and should_or_not) or (match == None
-                                                 and not should_or_not)
+    assert (match != None and should_or_not) or (match == None and
+                                                 not should_or_not)
 
 
 @when(
@@ -394,8 +393,8 @@ def step_impl(context, duration):
     def condition(context, flag):
         resp = api_get(context, "database/list_instance",
                        {"number": context.page_size_to_select_all})
-        match = pyjq.first(
-            '.data | any(."mysql_id" == "{0}")'.format(mysql_id), resp)
+        match = pyjq.first('.data | any(."mysql_id" == "{0}")'.format(mysql_id),
+                           resp)
         if match is not True:
             return True
 
@@ -449,8 +448,7 @@ def step_imp(context, duration):
             "number": context.page_size_to_select_all,
         })
         match = pyjq.first(
-            '.data[] | select(.group_id == "{0}")'.format(mysql_group_id),
-            resp)
+            '.data[] | select(.group_id == "{0}")'.format(mysql_group_id), resp)
         if context.valid_sip == match['sip']:
             return True
 

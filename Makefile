@@ -6,4 +6,4 @@ test:
 install_deps:
 	pip install -r requirements.txt
 format: 
-	yapf --recursive --in-place .
+	yapf --recursive --in-place --style='{based_on_style: google, indent_width: 4}' .
