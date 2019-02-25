@@ -25,9 +25,11 @@ Feature: ushard
 	  When I found 1 Ushard group with Ushard instance, or I skip the test
 	  And I found 2 MySQL groups with MySQL HA instances, or I skip the test
 	  And I configure the Ushard group by adding 2 users to the MySQL groups
+	  And I create test table to dble by user1
+	  And I create test table to dble by user2
 	  Then the response is ok
 	  When I insert data to dble by user1
-	  # Then I found the data in MySQL by user1
+	  Then I found the data in MySQL by user1
 
 	@test
 	Scenario: remove ushard should succeed

@@ -281,7 +281,8 @@ def step_impl(context):
     assert ruleXmlStr is not None
     ruleXml = read_xml(ruleXmlStr)
 
-    ruleXml.getroot().insert(0, 
+    ruleXml.getroot().insert(
+        0,
         etree.fromstring("""
     <tableRule name="{0}">
         <rule>
@@ -308,22 +309,19 @@ def step_impl(context):
     config = [{
         "name": "rule.xml",
         "value": xml_to_str(ruleXml),
-    },
-              {
-                  "name": "schema.xml",
-                  "value": xml_to_str(schemaXml),
-              },
-              {
-                  "name": "server.xml",
-                  "value": xml_to_str(serverXml),
-              },
-              {
-                  "name": "cacheservice.properties",
-                  "value": cacheServiceXmlStr,
-              }, {
-                  "name": "ehcache.xml",
-                  "value": ehcacheXmlStr,
-              }]
+    }, {
+        "name": "schema.xml",
+        "value": xml_to_str(schemaXml),
+    }, {
+        "name": "server.xml",
+        "value": xml_to_str(serverXml),
+    }, {
+        "name": "cacheservice.properties",
+        "value": cacheServiceXmlStr,
+    }, {
+        "name": "ehcache.xml",
+        "value": ehcacheXmlStr,
+    }]
 
     api_request_post(
         context, "ushard_deploy/save_config", {
@@ -332,18 +330,24 @@ def step_impl(context):
             "ushard_config": json.dumps(config)
         })
 
+
 def read_xml(str):
-	return etree.ElementTree(etree.XML(str))
+    return etree.ElementTree(etree.XML(str))
+
 
 def xml_to_str(xml):
-	return etree.tostring(xml, doctype = xml.docinfo.doctype.replace("<!DOCTYPE ", "<!DOCTYPE dble:")).decode()
+    return etree.tostring(
+        xml,
+        doctype=xml.docinfo.doctype.replace("<!DOCTYPE ",
+                                            "<!DOCTYPE dble:")).decode()
 
-@when(u'I insert data to dble by user1')
-def step_impl(context):
+
+@when(u'I create test table to dble by {user_name:string}')
+def step_impl(context, user_name):
     assert context.ushard_group != None
     assert context.ushard_users != None
 
-    user = context.ushard_users["user1"]
+    user = context.ushard_users[user_name]
     ushard_group_id = context.ushard_group["group_id"]
 
     api_get(
@@ -351,6 +355,49 @@ def step_impl(context):
             "ushard_group_id": ushard_group_id,
             "user": user["name"],
             "password": user["password"],
-            "query": "show tables",
+            "query": "create table test(id int)",
             "schema": user["schema"]
         })
+
+@when(u'I insert data to dble by {user_name:string}')
+def step_impl(context, user_name):
+    assert context.ushard_group != None
+    assert context.ushard_users != None
+
+    user = context.ushard_users[user_name]
+    ushard_group_id = context.ushard_group["group_id"]
+    id = randint(0, 1048576)
+    context.insert_dble_data_id = id
+
+    api_get(
+        context, "helper/query_dble", {
+            "ushard_group_id": ushard_group_id,
+            "user": user["name"],
+            "password": user["password"],
+            "query": "insert into test (id) values({0})".format(id),
+            "schema": user["schema"]
+        })
+
+@then(u'I found the data in MySQL by {user_name:string}')
+def step_impl(context, user_name):
+    assert context.ushard_group != None
+    assert context.ushard_users != None
+    assert context.insert_dble_data_id != None
+
+    user = context.ushard_users[user_name]
+    ushard_group_id = context.ushard_group["group_id"]
+    resp = api_get(
+        context, "helper/query_dble", {
+            "ushard_group_id":
+            ushard_group_id,
+            "user":
+            user["name"],
+            "password":
+            user["password"],
+            "query":
+            "select * from test where id = '{0}'".format(
+                context.insert_dble_data_id),
+            "schema":
+            user["schema"]
+        })
+    assert len(resp) == 1
