@@ -30,6 +30,8 @@ Feature: ushard
 	  Then the response is ok
 	  When I insert data to dble by user1
 	  Then I found the data in MySQL by user1
+	  When I insert data to dble by user2
+	  Then I found the data in MySQL by user2
 
 	@test
 	Scenario: remove ushard should succeed
