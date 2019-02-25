@@ -7,6 +7,7 @@ import re
 from util import *
 from common import *
 from database import get_mysql_group_brief
+from lxml import etree
 
 use_step_matcher("cfparse")
 
@@ -221,34 +222,28 @@ def step_impl(context):
     # update dble
 
     ## server.xml
-    serverXml = pyjq.first('.[] | select(.name == "server.xml") | .value',
-                           configs)
-    assert serverXml is not None
+    serverXmlStr = pyjq.first('.[] | select(.name == "server.xml") | .value',
+                              configs)
+    assert serverXmlStr is not None
+    serverXml = read_xml(serverXmlStr)
 
-    serverXml = serverXml.replace(
-        "</dble:server>", """
-
-    <user name="{0}">
-        <property name="password">{1}</property>
-        <property name="readOnly">false</property>
-        <property name="schemas">{2}</property>
-    </user>
-    <user name="{3}">
-        <property name="password">{4}</property>
-        <property name="readOnly">false</property>
-        <property name="schemas">{5}</property>
-    </user>
-
-</dble:server>""".format(user1["name"], user1["password"], user1["schema"],
-                         user2["name"], user2["password"], user2["schema"]))
+    for user in [user1, user2]:
+        serverXml.getroot().append(
+            etree.fromstring("""
+        <user name="{0}">
+            <property name="password">{1}</property>
+            <property name="readOnly">false</property>
+            <property name="schemas">{2}</property>
+        </user>""".format(user["name"], user["password"], user["schema"])))
 
     ## schema.xml
-    schemaXml = pyjq.first('.[] | select(.name == "schema.xml") | .value',
-                           configs)
-    assert schemaXml is not None
+    schemaXmlStr = pyjq.first('.[] | select(.name == "schema.xml") | .value',
+                              configs)
+    assert schemaXmlStr is not None
+    schemaXml = read_xml(schemaXmlStr)
 
-    schemaXml = schemaXml.replace(
-        "</dble:schema>", """
+    newSections = """
+<newSections>
     <schema name="{1}" sqlMaxLimit="100">
         <table name="test" type="default" primaryKey="id" needAddLimit="true" rule="{0}" dataNode="{1}_dn1,{1}_dn2"></table>
     </schema>
@@ -271,56 +266,64 @@ def step_impl(context):
             <readHost host="{6}_S1" url="{8}" user="{9}" password="{10}"></readHost>
         </writeHost>
     </dataHost>
+</newSections>""".format(
+        rule_id, user1["schema"], mysql_group_1["master_addr"],
+        mysql_group_1["slave_addr"], "root", mysql_group_1["root_password"],
+        user2["schema"], mysql_group_2["master_addr"],
+        mysql_group_2["slave_addr"], "root", mysql_group_2["root_password"])
 
-</dble:schema>""".format(
-            rule_id, user1["schema"], mysql_group_1["master_addr"],
-            mysql_group_1["slave_addr"], "root",
-            mysql_group_1["root_password"], user2["schema"],
-            mysql_group_2["master_addr"], mysql_group_2["slave_addr"], "root",
-            mysql_group_2["root_password"]))
+    for item in etree.fromstring(newSections):
+        schemaXml.getroot().append(item)
 
     ## rule.xml
-    ruleXml = pyjq.first('.[] | select(.name == "rule.xml") | .value', configs)
-    assert ruleXml is not None
+    ruleXmlStr = pyjq.first('.[] | select(.name == "rule.xml") | .value',
+                            configs)
+    assert ruleXmlStr is not None
+    ruleXml = read_xml(ruleXmlStr)
 
-    ruleXml = ruleXml.replace(
-        "</dble:rule>", """
+    ruleXml.getroot().insert(0, 
+        etree.fromstring("""
     <tableRule name="{0}">
         <rule>
             <columns>id</columns>
             <algorithm>{0}</algorithm>
         </rule>
-    </tableRule>
+    </tableRule>""".format(rule_id)))
+
+    ruleXml.getroot().append(
+        etree.fromstring("""
     <function name="{0}" class="Hash">
         <property name="partitionCount">2</property>
         <property name="partitionLength">1</property>
-    </function>
-</dble:rule>""".format(rule_id))
+    </function>""".format(rule_id)))
 
     ## update config
-    cacheServiceXml = pyjq.first(
+    cacheServiceXmlStr = pyjq.first(
         '.[] | select(.name == "cacheservice.properties") | .value', configs)
-    assert cacheServiceXml is not None
-    ehcacheXml = pyjq.first('.[] | select(.name == "ehcache.xml") | .value',
-                            configs)
-    assert ehcacheXml is not None
+    assert cacheServiceXmlStr is not None
+    ehcacheXmlStr = pyjq.first('.[] | select(.name == "ehcache.xml") | .value',
+                               configs)
+    assert ehcacheXmlStr is not None
 
     config = [{
         "name": "rule.xml",
-        "value": ruleXml,
-    }, {
-        "name": "schema.xml",
-        "value": schemaXml,
-    }, {
-        "name": "server.xml",
-        "value": serverXml,
-    }, {
-        "name": "cacheservice.properties",
-        "value": cacheServiceXml,
-    }, {
-        "name": "ehcache.xml",
-        "value": ehcacheXml,
-    }]
+        "value": xml_to_str(ruleXml),
+    },
+              {
+                  "name": "schema.xml",
+                  "value": xml_to_str(schemaXml),
+              },
+              {
+                  "name": "server.xml",
+                  "value": xml_to_str(serverXml),
+              },
+              {
+                  "name": "cacheservice.properties",
+                  "value": cacheServiceXmlStr,
+              }, {
+                  "name": "ehcache.xml",
+                  "value": ehcacheXmlStr,
+              }]
 
     api_request_post(
         context, "ushard_deploy/save_config", {
@@ -329,6 +332,11 @@ def step_impl(context):
             "ushard_config": json.dumps(config)
         })
 
+def read_xml(str):
+	return etree.ElementTree(etree.XML(str))
+
+def xml_to_str(xml):
+	return etree.tostring(xml, doctype = xml.docinfo.doctype.replace("<!DOCTYPE ", "<!DOCTYPE dble:")).decode()
 
 @when(u'I insert data to dble by user1')
 def step_impl(context):
