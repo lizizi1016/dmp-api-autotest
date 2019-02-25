@@ -171,7 +171,36 @@ def step_impl(context):
 	mysql_group_1 = get_mysql_group_brief(context, context.mysql_groups[0]["group_id"])
 	mysql_group_2 = get_mysql_group_brief(context, context.mysql_groups[1]["group_id"])
 
-	# server.xml
+
+	# prepare database in MySQL
+	api_get(context, "helper/query_mysql", {
+		"mysql_id": mysql_group_1["master_id"],
+		"user": "root",
+		"password": mysql_group_1["root_password"],
+		"query": "create database {0}_db1".format(user1["schema"])
+	})
+	api_get(context, "helper/query_mysql", {
+		"mysql_id": mysql_group_1["master_id"],
+		"user": "root",
+		"password": mysql_group_1["root_password"],
+		"query": "create database {0}_db2".format(user1["schema"])
+	})
+	api_get(context, "helper/query_mysql", {
+		"mysql_id": mysql_group_2["master_id"],
+		"user": "root",
+		"password": mysql_group_2["root_password"],
+		"query": "create database {0}_db1".format(user2["schema"])
+	})
+	api_get(context, "helper/query_mysql", {
+		"mysql_id": mysql_group_2["master_id"],
+		"user": "root",
+		"password": mysql_group_2["root_password"],
+		"query": "create database {0}_db2".format(user2["schema"])
+	})
+
+	# update dble
+
+	## server.xml
 	serverXml = pyjq.first('.[] | select(.name == "server.xml") | .value', configs)
 	assert serverXml is not None
 
@@ -192,7 +221,7 @@ def step_impl(context):
 	user1["name"], user1["password"], user1["schema"],
 	user2["name"], user2["password"], user2["schema"]))
 
-	# schema.xml
+	## schema.xml
 	schemaXml = pyjq.first('.[] | select(.name == "schema.xml") | .value', configs)
 	assert schemaXml is not None
 
@@ -225,7 +254,7 @@ def step_impl(context):
 	user1["schema"], mysql_group_1["master_addr"], mysql_group_1["slave_addr"], "root", mysql_group_1["root_password"],
 	user2["schema"], mysql_group_2["master_addr"], mysql_group_2["slave_addr"], "root", mysql_group_2["root_password"]))
 
-	# rule.xml
+	## rule.xml
 	ruleXml = pyjq.first('.[] | select(.name == "rule.xml") | .value', configs)
 	assert ruleXml is not None
 
@@ -242,7 +271,7 @@ def step_impl(context):
     </function>
 </dble:rule>""".format(rule_id))
 
-	# update config
+	## update config
 	cacheServiceXml = pyjq.first('.[] | select(.name == "cacheservice.properties") | .value', configs)
 	assert cacheServiceXml is not None
 	ehcacheXml = pyjq.first('.[] | select(.name == "ehcache.xml") | .value', configs)
@@ -279,18 +308,18 @@ def step_impl(context):
 
 @when(u'I insert data to dble by user1')
 def step_impl(context):
-	assert context.ushard_group != None
-	assert context.ushard_users != None
+    assert context.ushard_group != None
+    assert context.ushard_users != None
 
-	user = context.ushard_users["user1"]
-
-	api_get(context, "helper/query_dble", {
-		"ushard_group_id": context.ushard_group["group_id"],
-		"user": user["name"],
-		"password": user["password"],
-		"query": "show tables"
-	})
-
-        
+    user = context.ushard_users["user1"]
+    ushard_group_id = context.ushard_group["group_id"]
+    
+    api_get(context, "helper/query_dble", {
+        "ushard_group_id": ushard_group_id,
+        "user": user["name"],
+        "password": user["password"],
+        "query": "show tables",
+        "schema": user["schema"]
+    })
 
 

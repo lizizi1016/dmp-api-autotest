@@ -632,7 +632,9 @@ def get_mysql_group_brief(context, group_id):
 
 	return {
 		"group_id": group_id,
+		"master_id": master["mysql_id"],
 		"master_addr": master["server_addr"] + ":" + master["port"],
+		"slave_id": slave["mysql_id"],
 		"slave_addr": slave["server_addr"] + ":" + slave["port"],
 		"root_password": root_password
 	}
