@@ -52,16 +52,16 @@ Feature: database
   @test @case.272
   Scenario: database/start MySQL instance ha enable should succeed
     When I found a running MySQL instance, or I skip the test
-    And start MySQL instance ha enable
+    And I start MySQL instance ha enable
     Then the response is ok
-    And MySQL instance ha enable should started
+    And MySQL instance ha enable should started in 1m
 
   @test @case.272
   Scenario: database/stop MySQL instance ha enable should succeed
     When I found a running MySQL instance and uguard enable,or I skip the test
-    And stop MySQL instance ha enable
+    And I stop MySQL instance ha enable
     Then the response is ok
-    And MySQL instance ha enable should stopped
+    And MySQL instance ha enable should stopped in 1m
 
   @test @case.272
   Scenario: database/configure group SIP
@@ -74,7 +74,7 @@ Feature: database
   @test @case.272
   Scenario: database/stop MySQL service
     When I found a running MySQL instance, or I skip the test
-    And stop MySQL service
+    And I stop MySQL service
     Then the response is ok
     And stop MySQL service should succeed in 1m
 
@@ -84,24 +84,24 @@ Feature: database
     And I make a manual backup on the MySQL instance
     Then the response is ok
 
-    When stop MySQL service
+    When I stop MySQL service
     Then the response is ok
     And stop MySQL service should succeed in 1m
 
-    When reset database instance
+    When I reset database instance
     Then the response is ok
     And reset database instance should succeed in 2m
 
   @test @case.272
   Scenario: database/promote to master
-    When I found 1 MySQL group with HA MySQL instances, or I skip the test
-    And promote slave instance to master
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I promote slave instance to master
     Then the response is ok
     And promote slave instance to master should succeed in 1m
 
   @test @case.272
   Scenario Outline: view slave staus
-    When I found 1 MySQL group with HA MySQL instances, or I skip the test
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I query the slave instance "SELECT SERVICE_STATE FROM performance_schema.<option>"
     Then the MySQL response should be
       |SERVICE_STATE|
@@ -114,12 +114,12 @@ Feature: database
   @test @case.272
   Scenario: create table in instance
     When I found a running MySQL instance, or I skip the test
-    And I Execution action the MySQL instance "use mysql;create table testcase(id int auto_increment not null primary key ,uname char(8),gender char(2),birthday date );"
+    And I execute the MySQL instance "use mysql;create table testcase(id int auto_increment not null primary key ,uname char(8),gender char(2),birthday date );"
     And I query the MySQL instance "select table_name from information_schema.tables where table_name="testcase";"
     Then the MySQL response should be
       | table_name |
       | testcase   |
-    When I Execution action the MySQL instance "use mysql;DROP TABLE testcase;"
+    When I execute the MySQL instance "use mysql;DROP TABLE testcase;"
 
   @test
   Scenario: database/add sla protocol and start
@@ -131,3 +131,118 @@ Feature: database
     When I start sla protocol
     Then the response is ok
     And sla protocol should started
+
+  @test @case.272
+  Scenario: master-slave switching when kill three master pid
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I found alert code "EXCLUDE_INSTANCE_SUCCESS", or I skip the test
+    And I kill three master pid
+
+    Then master-slave switching in 1m
+    And expect alert code "EXCLUDE_INSTANCE_SUCCESS" in 2m
+
+
+  @test
+  Scenario: database/create MySQL user should succeed
+    When I found a running MySQL instance, or I skip the test
+    And I create MySQL user "testcase" and grants "all privileges on *.*"
+    Then the response is ok
+
+    When I query the MySQL instance "show grants for 'testcase';"
+    Then the MySQL response should be
+      |Grants for testcase@%|
+      |GRANT ALL PRIVILEGES ON *.* TO 'testcase'@'%'|
+
+    When I create MySQL user "testcase" and grants "select on *.*"
+    Then the response is ok
+
+    When I query the MySQL instance "show grants for 'testcase';"
+    Then the MySQL response should be
+      |Grants for testcase@%|
+      |GRANT ALL PRIVILEGES ON *.* TO 'testcase'@'%'|
+
+  @test
+  Scenario: data/update MySQL user password
+    When I found a running MySQL instance, or I skip the test
+    And I create MySQL user "test55" and grants "all privileges on *.*"
+    Then the response is ok
+    When I query the MySQL instance "show grants for 'test55';"
+    Then the MySQL response should be
+      |Grants for test55@%|
+      |GRANT ALL PRIVILEGES ON *.* TO 'test55'@'%'|
+
+    When I update MySQL user "test55" and password "test"
+    Then the response is ok
+
+    When I query the MySQL instance use user "test55" "show grants for 'test55';"
+    Then the MySQL response should be
+      |Grants for test55@%|
+      |GRANT ALL PRIVILEGES ON *.* TO 'test55'@'%'|
+
+  @test
+  Scenario: database/take over MySQL instance
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I detach MySQL instance
+    Then the response is ok
+
+    Then detach MySQL instance should succeed in 2m
+    When I take over MySQL instance
+    Then the response is ok
+    And take over MySQL instance should succeed in 2m
+
+  @test
+  Scenario: idempotent exclude and include ha
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I exclude ha MySQL instance
+    Then the response is ok
+    And MySQL instance ha enable should stopped in 1m
+
+    When I start MySQL instance ha enable
+    Then the response is ok
+    And MySQL instance ha enable should started in 1m
+
+    When I stop MySQL instance ha enable
+    Then the response is ok
+    And MySQL instance ha enable should stopped in 1m
+
+    When I start MySQL instance ha enable
+    Then the response is ok
+    And MySQL instance ha enable should started in 1m
+
+
+  @test
+  Scenario: SLA downgrade recovery
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I add sla protocol "SLA_RPO_sample"
+    Then the response is ok
+    And sla protocol "SLA_RPO_sample" should add succeed in 1m
+
+    When I start group sla protocol
+    Then the response is ok
+    And group sla protocol should started
+
+    When I exclude ha MySQL instance
+    Then the response is ok
+    And MySQL instance ha enable should stopped in 1m
+    And group sla level PE3 in 1m
+    And expect alert code "SLA_LEVEL_CHANGED" and detail "P1 to PE3" in 3m
+
+
+    When I start MySQL instance ha enable
+    Then the response is ok
+    And MySQL instance ha enable should started in 1m
+    And group sla level P1 in 1m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
