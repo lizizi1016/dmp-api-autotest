@@ -1,0 +1,98 @@
+version: '2'
+
+services:
+  udp-1:
+    container_name: udp-1
+    hostname: udp1
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.1
+    ports:
+         - "8722:22"
+         - "8708:5708"
+         - "8709:5709"
+         - "8799:5799"
+         - "8713:5713"
+         - "8715:5715"
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-2:
+    container_name: udp-2
+    hostname: udp2
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.2
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-3:
+    container_name: udp-3
+    hostname: udp3
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.3
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-4:
+    container_name: udp-4
+    hostname: udp4
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.4
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-5:
+    container_name: udp-5
+    hostname: udp5
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.5
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-6:
+    container_name: udp-6
+    hostname: udp6
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.6
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-7:
+    container_name: udp-7
+    hostname: udp7
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.7
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-8:
+    container_name: udp-8
+    hostname: udp8
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.8
+    extends:
+      file: common.yaml
+      service: agent
+
+networks:
+  quick_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.20.30.0/24
+          gateway: 10.20.30.254
