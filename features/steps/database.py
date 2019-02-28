@@ -421,7 +421,6 @@ def step_impl(context):
         "server_id": context.mysql_instance['server_id'],
         "group_id": context.mysql_instance['group_id'],
         "mysql_id": context.mysql_instance['mysql_id'],
-        "is_sync": "true",
     }
     api_request_post(context, "database/start_mysql_ha_enable", body)
 
