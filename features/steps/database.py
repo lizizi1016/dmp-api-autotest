@@ -911,7 +911,7 @@ def step_imp(context):
         })
 
 
-@then(u'detach MySQL instance should succeed in {duration:time}')
+@then(u'the MySQL instance should be detached in {duration:time}')
 def step_imp(context, duration):
     assert context.mysql_group != None
     assert context.mysql_instance != None
@@ -929,7 +929,7 @@ def step_imp(context, duration):
     waitfor(context, condition, duration)
 
 
-@when(u'I take over MySQL instance')
+@when(u'I takeover MySQL instance')
 def step_imp(context):
     assert context.mysql_group != None
     assert context.mysql_instance != None
@@ -980,7 +980,7 @@ def get_master_root_password(context):
     return root_password
 
 
-@then(u'take over MySQL instance should succeed in {duration:time}')
+@then(u'takeover MySQL instance should succeed in {duration:time}')
 def step_imp(context, duration):
     assert context.mysql_group != None
 
@@ -1046,7 +1046,7 @@ def step_imp(context, duration, sla):
     waitfor(context, condition, duration)
 
 
-@when(u'I start group sla protocol')
+@when(u'I start the group SLA protocol')
 def step_imp(context):
     assert context.mysql_group != None
     api_request_post(context, "/database/start_sla_protocol", {
@@ -1055,7 +1055,7 @@ def step_imp(context):
     })
 
 
-@then(u'group sla protocol should started')
+@then(u'the group SLA protocol should started')
 def step_imp(context):
     assert context.mysql_group != None
     res = api_get(context, "database/list_group", {

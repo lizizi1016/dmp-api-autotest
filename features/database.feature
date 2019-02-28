@@ -180,15 +180,15 @@ Feature: database
       |GRANT ALL PRIVILEGES ON *.* TO 'test55'@'%'|
 
   @test
-  Scenario: database/take over MySQL instance
+  Scenario: database/takeover MySQL instance
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I detach MySQL instance
     Then the response is ok
 
-    Then detach MySQL instance should succeed in 2m
-    When I take over MySQL instance
+    Then the MySQL instance should be detached in 2m
+    When I takeover MySQL instance
     Then the response is ok
-    And take over MySQL instance should succeed in 2m
+    And takeover MySQL instance should succeed in 2m
 
   @test
   Scenario: idempotent exclude and include ha
@@ -217,9 +217,9 @@ Feature: database
     Then the response is ok
     And sla protocol "SLA_RPO_sample" should add succeed in 1m
 
-    When I start group sla protocol
+    When I start the group SLA protocol
     Then the response is ok
-    And group sla protocol should started
+    And the group SLA protocol should started
 
     When I exclude ha MySQL instance
     Then the response is ok
