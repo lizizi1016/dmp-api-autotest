@@ -4,12 +4,13 @@ TARGET_DOCKER = "udp-1"
 CENTOS_DOCKER_COMPOSE_FILE = docker-compose.yaml
 
 install: docker_up
-	docker exec ${TARGET_DOCKER} rm -rf ${TARGET_DOCKER_TMP_DIR}
-	docker cp ${PWD} ${TARGET_DOCKER}:${TARGET_DOCKER_TMP_DIR}
-	docker exec -t ${TARGET_DOCKER} bash -c "bash ${TARGET_DOCKER_TMP_DIR}/udp_install.sh"
+#pipelines need sudo run docker command
+	sudo docker exec ${TARGET_DOCKER} rm -rf ${TARGET_DOCKER_TMP_DIR}
+	sudo docker cp ${PWD} ${TARGET_DOCKER}:${TARGET_DOCKER_TMP_DIR}
+	sudo docker exec -t ${TARGET_DOCKER} bash -c "bash ${TARGET_DOCKER_TMP_DIR}/udp_install.sh"
 
 docker_up: clean
-	cd ${PWD}/compose && docker-compose -f ${CENTOS_DOCKER_COMPOSE_FILE} up -d
+	cd ${PWD}/compose && sudo docker-compose -f ${CENTOS_DOCKER_COMPOSE_FILE} up -d
 
 clean:
-	cd ${PWD}/compose && docker-compose -f ${CENTOS_DOCKER_COMPOSE_FILE} down
+	cd ${PWD}/compose && sudo docker-compose -f ${CENTOS_DOCKER_COMPOSE_FILE} down

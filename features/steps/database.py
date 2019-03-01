@@ -1098,7 +1098,8 @@ def step_imp(context, level, duration):
         match = pyjq.first(
             '.data[] | select(.group_id == "{0}")'.format(
                 context.mysql_group[0]["group_id"]), res)
-        assert match is not None
+        if match is not None and "sla_level" not in match:
+            return
         if match['sla_level'] == level:
             return True
 
