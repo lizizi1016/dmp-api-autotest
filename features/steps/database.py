@@ -465,6 +465,8 @@ def step_imp(context, duration):
         })
         match = pyjq.first(
             '.data[] | select(.group_id == "{0}")'.format(mysql_group_id), resp)
+        if "sip" not in match:
+            return
         if match is not None and context.valid_sip == match['sip']:
             return True
 
@@ -1175,7 +1177,7 @@ def step_imp(context, action, component):
     slave = pyjq.first('.data[] | select(.role == "STATUS_MYSQL_SLAVE")', resp)
     assert slave is not None
     context.mysql_instance = slave
-    if action.low() == "pause":
+    if action.lower() == "pause":
         context.execute_steps(u"""
         When I pause component {0}
             """.format(component))
