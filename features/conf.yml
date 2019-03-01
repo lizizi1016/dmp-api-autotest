@@ -1,5 +1,7 @@
-base_url: http://10.186.62.2:25799/v3/
+base_url: http://10.186.18.109:8799/v3/
 component_installation_dir: /opt/
 time_weight: 1
 page_size_to_select_all: 999
 mysql_installation_dir: /opt/mysql/
+group_sip_1: 10.20.30.100
+group_sip_2: 10.20.30.101

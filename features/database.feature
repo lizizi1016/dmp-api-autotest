@@ -233,18 +233,39 @@ Feature: database
     And MySQL instance ha enable should started in 1m
     And group sla level P1 in 1m
 
+    When I pause the group SLA protocol
+    Then the response is ok
+    And the group SLA protocol should paused in 1m
+    When I remove the group SLA protocol
+    Then the response is ok
+    And the group SLA protocol should remove succeed in 1m
 
+    When I add sla protocol "SLA_RTO_sample"
+    Then the response is ok
+    And sla protocol "SLA_RTO_sample" should add succeed in 1m
+    When I start the group SLA protocol
+    Then the response is ok
+    And the group SLA protocol should started
+    When I exclude ha MySQL instance
+    Then the response is ok
+    And MySQL instance ha enable should stopped in 1m
+    And group sla level TE3 in 1m
+    And expect alert code "SLA_LEVEL_CHANGED" and detail "T1 to TE3" in 3m
 
+    When I start MySQL instance ha enable
+    Then the response is ok
+    And MySQL instance ha enable should started in 1m
+    And group sla level T1 in 1m
 
+  @test
+  Scenario: restart slave uguard-agent and view instance data
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I add the ip "10.20.30.111" to sip pool
+    Then the response is ok
 
+    When I found a valid SIP, or I skip the test
+    And I configure MySQL group SIP
+    Then the response is ok
+    And update MySQL group SIP successful in 1m
 
-
-
-
-
-
-
-
-
-
-
+    When I action pause MySQL instance component uguard-agent
