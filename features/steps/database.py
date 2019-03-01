@@ -447,7 +447,7 @@ def step_imp(context):
     assert context.mysql_group != None
     assert context.valid_sip != None
     body = {
-        "group_id": context.mysql_group['group_id'],
+        "group_id": context.mysql_group[0]['group_id'],
         "sip": context.valid_sip
     }
     api_request_post(context, "database/update_mysql_sip", body)
@@ -457,7 +457,7 @@ def step_imp(context):
 def step_imp(context, duration):
     assert context.mysql_group != None
     assert context.valid_sip != None
-    mysql_group_id = context.mysql_group["group_id"]
+    mysql_group_id = context.mysql_group[0]["group_id"]
 
     def condition(context, flag):
         resp = api_get(context, "database/list_group", {
@@ -465,6 +465,8 @@ def step_imp(context, duration):
         })
         match = pyjq.first(
             '.data[] | select(.group_id == "{0}")'.format(mysql_group_id), resp)
+        if "sip" not in match:
+            return
         if match is not None and context.valid_sip == match['sip']:
             return True
 
@@ -1101,3 +1103,105 @@ def step_imp(context, level, duration):
             return True
 
     waitfor(context, condition, duration)
+
+
+@when(u'I remove the group SLA protocol')
+def step_imp(context):
+    assert context.mysql_group != None
+    body = {
+        "group_id": context.mysql_group[0]["group_id"],
+        "is_sync": "true",
+    }
+    api_request_post(context, "/database/remove_sla_protocol", body)
+
+
+@when(u'I pause the group SLA protocol')
+def step_imp(context):
+    assert context.mysql_group != None
+    body = {
+        "group_id": context.mysql_group[0]["group_id"],
+        "is_sync": "true",
+    }
+    api_request_post(context, "/database/pause_sla_protocol", body)
+
+
+@then(u'the group SLA protocol should paused in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_group != None
+
+    def condition(context, flag):
+        res = api_get(context, "database/list_group", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first(
+            '.data[] | select(.group_id == "{0}")'.format(
+                context.mysql_group[0]["group_id"]), res)
+        assert match is not None
+        if match['sla_enable'] == "DISABLE":
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@then(u'the group SLA protocol should remove succeed in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_group != None
+
+    def condition(context, flag):
+        res = api_get(context, "database/list_group", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first(
+            '.data[] | select(.group_id == "{0}")'.format(
+                context.mysql_group[0]["group_id"]), res)
+        if match is not None and 'sla_template' not in match:
+            return True
+
+    waitfor(context, condition, duration)
+
+@when(u'I add the ip "{ip}" to sip pool')
+def step_imp(context, ip):
+    sip = ip
+    api_request_post(context, "sippool/add", {
+        "sip": sip,
+        "is_sync": "true",
+    })
+
+
+@when(u'I action {action:string} MySQL instance component {component:string}')
+def step_imp(context, action, component):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
+    })
+    slave = pyjq.first('.data[] | select(.role == "STATUS_MYSQL_SLAVE")', resp)
+    assert slave is not None
+    context.mysql_instance = slave
+    if action.lower() == "pause":
+        context.execute_steps(u"""
+        When I pause component {0}
+            """.format(component))
+    else:
+        context.execute_steps(u"""
+    	When I start component {0}
+    	    """.format(component))
+
+
+@when(u'I pause component {component:string}')
+def step_imp(context, component):
+    assert context.mysql_instance != None
+    api_request_post(context, "/server/pause", {
+        "server_id": context.mysql_instance['server_id'],
+        "component": component,
+        "is_sync": "true",
+    })
+
+
+@when(u'I start component {component:string}')
+def step_imp(context, component):
+    assert context.mysql_instance != None
+    api_request_post(context, "/server/start", {
+        "server_id": context.mysql_instance['server_id'],
+        "component": component,
+        "is_sync": "true",
+    })
