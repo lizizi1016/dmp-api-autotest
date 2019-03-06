@@ -1191,18 +1191,364 @@ def step_imp(context, action, component):
 @when(u'I pause component {component:string}')
 def step_imp(context, component):
     assert context.mysql_instance != None
-    api_request_post(context, "/server/pause", {
-        "server_id": context.mysql_instance['server_id'],
-        "component": component,
-        "is_sync": "true",
-    })
+    api_request_post(
+        context, "/server/pause", {
+            "server_id": context.mysql_instance['server_id'],
+            "component": component,
+            "is_sync": "true",
+        })
 
 
 @when(u'I start component {component:string}')
 def step_imp(context, component):
     assert context.mysql_instance != None
-    api_request_post(context, "/server/start", {
-        "server_id": context.mysql_instance['server_id'],
-        "component": component,
+    api_request_post(
+        context, "/server/start", {
+            "server_id": context.mysql_instance['server_id'],
+            "component": component,
+            "is_sync": "true",
+        })
+
+
+@then(
+    u'action {action:string} MySQL instance component {component:string} should succeed in {duration:time}'
+)
+def step_imp(context, action, component, duration):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
+    })
+    slave = pyjq.first('.data[] | select(.role == "STATUS_MYSQL_SLAVE")', resp)
+    assert slave is not None
+    context.mysql_instance = slave
+    component_status = component + "_status"
+    if action.lower() == "pause":
+
+        def condition(context, flag):
+            resp = api_get(context, "server/list", {
+                "number": context.page_size_to_select_all,
+            })
+            match = pyjq.first(
+                '.data[] | select(."server_id" == "{0}")'.format(
+                    slave['server_id']), resp)
+            if match is not None and match["{0}".format(
+                    component_status)] == "STATUS_STOPPED":
+                return True
+
+        waitfor(context, condition, duration)
+
+    else:
+
+        def condition(context, flag):
+            resp = api_get(context, "server/list", {
+                "number": context.page_size_to_select_all,
+            })
+            match = pyjq.first(
+                '.data[] | select(."server_id" == "{0}")'.format(
+                    slave['server_id']), resp)
+            if match is not None and match["{0}".format(
+                    component_status)] == "STATUS_OK":
+                return True
+
+        waitfor(context, condition, duration)
+
+
+@when(u'I create and insert table in master instance "{statement}"')
+def step_imp(context, statement):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
+    })
+    mysql = pyjq.first('.data[] | select(.role == "STATUS_MYSQL_MASTER")', resp)
+    master_root = get_mysql_instance_root_password(context, mysql['mysql_id'])
+    assert mysql is not None
+    resp = api_get(
+        context, "helper/query_mysql", {
+            "mysql_id": mysql["mysql_id"],
+            "query": statement,
+            "user": "root",
+            "password": master_root,
+        })
+
+
+@when(u'I add MongoDB group')
+def step_imp(context):
+    assert context.valid_port != None
+    mongodb_group_id = "mongodb-" + generate_id()
+    body = {
+        "group_id": mongodb_group_id,
+        "port": context.valid_port,
+        "mongodb_admin_user": "admin",
+        "mongodb_admin_password": "QWEasd123",
+        "is_sync": "true",
+    }
+    api_request_post(context, "/mongodb/add_group", body)
+    context.mongodb_group_id = mongodb_group_id
+
+
+@then(
+    u'the MongoDB group list {should_or_not:should_or_not} contains the MongoDB group'
+)
+def step_impl(context, should_or_not):
+    assert context.mongodb_group_id != None
+
+    resp = api_get(context, "mongodb/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.[] | select(.group_id == "{0}")'.format(context.mongodb_group_id),
+        resp)
+    assert (match != None and should_or_not) or (match == None and
+                                                 not should_or_not)
+
+
+@when(u'I found a MongoDB group without MongoDB instance, or I skip the test')
+def step_impl(context):
+    resp = api_get(context, "mongodb/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first('.[] | select(.group_instance_num == "0") ', resp)
+    if match is None:
+        context.scenario.skip("found a MongoDB group with MongoDB instance")
+    else:
+        context.mongodb_group = match
+
+
+@when(u'I add MongoDB instance')
+def step_imp(context):
+    assert context.mongodb_group != None
+    assert context.server != None
+    install_file = get_mongodb_installation_file(context)
+    base_dir = context.component_installation_dir
+    body = {
+        "server_id":
+        context.server['server_id'],
+        "group_id":
+        context.mongodb_group['group_id'],
+        "mongodb_id":
+        "mongodb-" + generate_id(),
+        "mongodb_alias":
+        "mongodb-" + generate_id(),
+        "mongodb_tarball_path":
+        install_file,
+        "mongodb_base_path":
+        base_dir + "mongodb/base/" + context.mongodb_group['port'],
+        "mongodb_data_path":
+        base_dir + "mongodb/data/" + context.mongodb_group['port'],
+        "mongodb_config_path":
+        base_dir + "mongodb/etc/" + context.mongodb_group['port'] + "/config",
+        "mongodb_backup_path":
+        base_dir + "mongodb/backup/" + context.mongodb_group['port'],
+        "mongodb_run_user":
+        "actiontech-mongodb",
+        "is_sync":
+        "true",
+    }
+    api_request_post(context, "/mongodb/add_instance", body)
+
+
+def get_mongodb_installation_file(context):
+    return get_installation_file(context, "mongodb")
+
+
+@then(u'MongoDB instance should add succeed in {duration:time}')
+def step_imp(context, duration):
+    assert context.mongodb_group != None
+
+    def condition(context, flag):
+        resp = api_get(context, "mongodb/list_instance", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first(
+            '.[] | select(.group_id == "{0}")'.format(
+                context.mongodb_group['group_id']), resp)
+        assert match is not None
+        if match['mongodb_status'] == "STATUS_MONGODB_HEALTH_OK":
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@then(
+    u'the MongoDB group should have {master_count:int} running MongoDB master and {slave_count:int} running MongoDB slave in {duration:time}'
+)
+def step_impl(context, master_count, slave_count, duration):
+    assert context.mongodb_group != None
+
+    def condition(context, flag):
+        resp = api_get(context, "mongodb/list_instance", {
+            "number": context.page_size_to_select_all,
+        })
+        condition = '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_OK")'
+        masters = pyjq.all(
+            condition +
+            ' | select(."mongodb_is_primary" == "STATUS_MONGODB_PRIMARY")',
+            resp)
+        slaves = pyjq.all(
+            condition +
+            ' | select(."mongodb_is_primary" == "STATUS_MONGODB_SECONDARY")',
+            resp)
+        if len(masters) == master_count and len(slaves) == slave_count:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(u'I found a running MongoDB instance {role:string}, or I skip the test')
+def step_imp(context, role):
+    resp = api_get(context, "mongodb/list_instance", {
+        "number": context.page_size_to_select_all,
+    })
+    if role == "slave":
+        role == "STATUS_MONGODB_SECONDARY"
+    else:
+        role == "STATUS_MONGODB_PRIMARY"
+    condition = '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_OK")'
+    masters = pyjq.all(
+        condition + ' | select(."mongodb_is_primary" == "{0}")'.format(role),
+        resp)
+    slaves = pyjq.all(
+        condition + ' | select(."mongodb_is_primary" == "{0}")'.format(role),
+        resp)
+    if masters is None:
+        context.scenario.skip("no found a MongoDB group with MongoDB instance")
+        return
+    else:
+        if role == 'slave':
+            context.mongodb_info = slaves
+        else:
+            context.mongodb_info = masters
+
+
+@when(u'I action {action:string} MongoDB instance')
+def step_imp(context, action):
+    assert context.mongodb_info != None
+    if action.lower() == "stop":
+        api_request_post(context, "/mongodb/stop_instance", {
+            "mongodb_id": context.mongodb_info[0]['mongodb_id'],
+            "is_sync": "true",
+        })
+    else:
+        api_request_post(context, "/mongodb/start_instance", {
+            "mongodb_id": context.mongodb_info[0]['mongodb_id'],
+            "is_sync": "true",
+        })
+
+
+@then(u'MongoDB instance should {status:string} in {duration:time}')
+def step_imp(context, status, duration):
+    assert context.mongodb_info != None
+    if status == "stopped":
+
+        def condition(context, flag):
+            resp = api_get(context, "mongodb/list_instance", {
+                "number": context.page_size_to_select_all,
+            })
+            match = pyjq.first(
+                '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_BAD" ."mongodb_id" == "{0}")'
+                .format(context.mongodb_info[0]['mongodb_id']), resp)
+            if match is not None:
+                return True
+
+        waitfor(context, condition, duration)
+    else:
+
+        def condition(context, flag):
+            resp = api_get(context, "mongodb/list_instance", {
+                "number": context.page_size_to_select_all,
+            })
+            match = pyjq.first(
+                '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_OK" ."mongodb_id" == "{0}")'
+                .format(context.mongodb_info[0]['mongodb_id']), resp)
+            if match is not None:
+                return True
+
+        waitfor(context, condition, duration)
+
+
+@when(u'I remove MongoDB instance')
+def step_imp(context):
+    assert context.mongodb_info != None
+    api_request_post(context, "/mongodb/remove_instance", {
+        "mongodb_id": context.mongodb_info[0]['mongodb_id'],
         "is_sync": "true",
     })
+
+
+@then(
+    u'the MongoDB instance list should not contains the MongoDB instance in {duration:time}'
+)
+def step_impl(context, duration):
+    assert context.mongodb_info != None
+
+    def condition(context, flag):
+        resp = api_get(context, "mongodb/list_instance", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first(
+            '.[] | select(.mongodb_id == "{0}")'.format(
+                context.mongodb_info[0]['mongodb_id']), resp)
+        if match is None:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(u'I add Uproxy group')
+def step_imp(context):
+    assert context.valid_port != None
+    group_id = 'uproxy-' + generate_id()
+    body = {
+        "group_id": group_id,
+        "sip": "",
+        "port": context.valid_port,
+        "is_autocommit": "1",
+        "admin_user": "root",
+        "admin_password": "QWEASD123",
+        "is_sync": "true",
+    }
+    api_request_post(context, "/uproxy/add_group", body)
+    context.group_id = group_id
+
+
+@then(
+    u'the Uproxy group list {should_or_not:should_or_not} contains the Uproxy group'
+)
+def step_impl(context, should_or_not):
+    assert context.group_id != None
+
+    resp = api_get(context, "uproxy/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.[] | select(.group_id == "{0}")'.format(context.group_id), resp)
+    assert (match != None and should_or_not) or (match == None and
+                                                 not should_or_not)
+
+
+@when(u'I found a Uproxy group without Uproxy instance, or I skip the test')
+def step_impl(context):
+    resp = api_get(context, "uproxy/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first('.[] | select(.group_instance_num == "0") ', resp)
+    if match is None:
+        context.scenario.skip("found a Uproxy group with Uproxy instance")
+    else:
+        context.uproxy_group = match
+
+
+@when(u'I found a server without uproxy')
+def step_impl(context):
+    resp = api_get(context, "server/list", {
+        "number": context.page_size_to_select_all,
+    })
+    for server in pyjq.all('.data[]', resp):
+        resp = api_get(context, "uproxy/list_instance",
+                       {"server_id": server["server_id"]})
+        match = pyjq.first('.data[] | .', resp)
+        if match is None:
+            context.server = server
+            return
+
+    assert False

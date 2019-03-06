@@ -143,7 +143,7 @@ Feature: database
 
 
   @test
-  Scenario: database/create MySQL user should succeed
+  Scenario: MySQL001-database/create MySQL user should succeed
     When I found a running MySQL instance, or I skip the test
     And I create MySQL user "testcase" and grants "all privileges on *.*"
     Then the response is ok
@@ -180,7 +180,7 @@ Feature: database
       |GRANT ALL PRIVILEGES ON *.* TO 'test55'@'%'|
 
   @test
-  Scenario: database/takeover MySQL instance
+  Scenario: E2E004-database/takeover MySQL instance
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I detach MySQL instance
     Then the response is ok
@@ -191,7 +191,7 @@ Feature: database
     And takeover MySQL instance should succeed in 2m
 
   @test
-  Scenario: idempotent exclude and include ha
+  Scenario: MGR005-idempotent exclude and include ha
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I exclude ha MySQL instance
     Then the response is ok
@@ -211,7 +211,7 @@ Feature: database
 
 
   @test
-  Scenario: SLA downgrade recovery
+  Scenario: MGR004-SLA downgrade recovery
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I add sla protocol "SLA_RPO_sample"
     Then the response is ok
@@ -258,10 +258,10 @@ Feature: database
     And group sla level T1 in 1m
 
   @test
-  Scenario: restart slave uguard-agent and view instance data
+  Scenario: MGR002-restart slave uguard-agent and view instance data
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
-    And I add the ip "10.20.30.111" to sip pool
-    Then the response is ok
+#    And I add the ip "10.20.30.127" to sip pool
+#    Then the response is ok
 
     When I found a valid SIP, or I skip the test
     And I configure MySQL group SIP
@@ -269,3 +269,22 @@ Feature: database
     And update MySQL group SIP successful in 1m
 
     When I action pause MySQL instance component uguard-agent
+    Then the response is ok
+    And action pause MySQL instance component uguard-agent should succeed in 1m
+
+    When I create and insert table in master instance "use mysql;create table test55(id int auto_increment not null primary key ,uname char(8));"
+    Then the response is ok
+    When I query the slave instance "select table_name from information_schema.tables where table_name="test55";"
+    Then the MySQL response should be
+      | table_name |
+      | test55   |
+    When I create and insert table in master instance "use mysql;DROP TABLE test55;"
+    Then the response is ok
+    When I action start MySQL instance component uguard-agent
+    Then the response is ok
+    And action start MySQL instance component uguard-agent should succeed in 1m
+
+
+
+
+
