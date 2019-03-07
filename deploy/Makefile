@@ -10,7 +10,7 @@ install: docker_up
 	sudo docker exec -t ${TARGET_DOCKER} bash -c "bash ${TARGET_DOCKER_TMP_DIR}/udp_install.sh"
 
 docker_up: clean
-	cd ${PWD}/compose && sudo docker-compose -f ${CENTOS_DOCKER_COMPOSE_FILE} up -d
+	cd ${PWD}/compose && sudo COMPOSE_HTTP_TIMEOUT=300 docker-compose -f ${CENTOS_DOCKER_COMPOSE_FILE} up -d
 
 clean:
-	cd ${PWD}/compose && sudo docker-compose -f ${CENTOS_DOCKER_COMPOSE_FILE} down
+	cd ${PWD}/compose && sudo COMPOSE_HTTP_TIMEOUT=300 docker-compose -f ${CENTOS_DOCKER_COMPOSE_FILE} down
