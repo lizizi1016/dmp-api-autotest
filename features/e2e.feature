@@ -43,10 +43,30 @@ Feature: end-to-end
 
   Scenario: E2E011-2 add Uproxy m-s instances should succeed
     When I found a Uproxy group without Uproxy instance, or I skip the test
+    And I found a valid port, or I skip the test
     And I found a server without uproxy
+    And I add Uproxy instance
+    Then the response is ok
+    And the Uproxy group should have 1 running Uproxy instance in 1m
 
+    When I found a valid port, or I skip the test
+    And I found a server without uproxy
+    And I add Uproxy instance
+    Then the response is ok
+    And the Uproxy group should have 2 running Uproxy instance in 1m
 
+  Scenario: E2E011-3 add Uproxy router should succeed
+    When I found 1 Uproxy group with Uproxy instance, or I skip the test
+    And I add uproxy router
+    Then the response is ok
+    And the Uproxy router list should contains the Uproxy router
 
+  Scenario: E2E011-4 add Uproxy router backend should succeed
+    When I found 1 Uproxy router, or I skip the test
+    And I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I add uproxy roter backend
+    Then the response is ok
+    And the Uproxy router list backend should add succeed in 1m
 
 
 

@@ -1521,7 +1521,7 @@ def step_impl(context, should_or_not):
         "number": context.page_size_to_select_all,
     })
     match = pyjq.first(
-        '.[] | select(.group_id == "{0}")'.format(context.group_id), resp)
+        '.data[] | select(.group_id == "{0}")'.format(context.group_id), resp)
     assert (match != None and should_or_not) or (match == None and
                                                  not should_or_not)
 
@@ -1531,7 +1531,7 @@ def step_impl(context):
     resp = api_get(context, "uproxy/list_group", {
         "number": context.page_size_to_select_all,
     })
-    match = pyjq.first('.[] | select(.group_instance_num == "0") ', resp)
+    match = pyjq.first('.data[] | select(.group_instance_num == "0") ', resp)
     if match is None:
         context.scenario.skip("found a Uproxy group with Uproxy instance")
     else:
@@ -1544,11 +1544,185 @@ def step_impl(context):
         "number": context.page_size_to_select_all,
     })
     for server in pyjq.all('.data[]', resp):
-        resp = api_get(context, "uproxy/list_instance",
-                       {"server_id": server["server_id"]})
-        match = pyjq.first('.data[] | .', resp)
+        res = api_get(context, "uproxy/list_instance", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first(
+            '.data[] | select(.server_id == "{0}")'.format(server['server_id']),
+            res)
         if match is None:
             context.server = server
             return
-
     assert False
+
+
+@when(u'I add Uproxy instance')
+def step_imp(context):
+    assert context.server != None
+    assert context.valid_port != None
+    assert context.uproxy_group != None
+    uproxy_id = "uproxy-" + generate_id()
+    install_file = get_uproxy_installation_file(context)
+    body = {
+        "server_id": context.server['server_id'],
+        "group_id": context.uproxy_group['group_id'],
+        "port": context.valid_port,
+        "smp": "1",
+        "uproxy_id": uproxy_id,
+        "uproxy_path": context.component_installation_dir + "uproxy",
+        "uproxy_glibc_install_file": "",
+        "uproxy_install_file": install_file,
+        "is_sync": "true",
+    }
+    api_request_post(context, "/uproxy/add_instance", body)
+    context.uproxy_id = uproxy_id
+
+
+def get_uproxy_installation_file(context):
+    return get_installation_file(context, "uproxy")
+
+
+@then(
+    u'the Uproxy group should have {expect_count:int} running Uproxy instance in {duration:time}'
+)
+def step_impl(context, expect_count, duration):
+    assert context.uproxy_id != None
+    assert context.uproxy_group != None
+    group_id = context.uproxy_group['group_id']
+
+    def condition(context, flag):
+        resp = api_get(context, "uproxy/list_instance", {
+            "group_id": group_id,
+        })
+        data = resp["data"]
+        assert len(data) == expect_count
+        condition = '.data[] | select(."status" == "STATUS_OK")'
+        match = pyjq.first(condition, resp)
+        if match is not None:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(
+    u'I found {count:int} Uproxy group with Uproxy instance, or I skip the test'
+)
+def step_impl(context, count):
+    resp = api_get(context, "uproxy/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first('.data[] | select(.group_instance_num > 0)', resp)
+    if match is None:
+        context.scenario.skip("Found no Uproxy group with Uproxy instance")
+    else:
+        context.uproxy_group = match
+
+
+@when(u'I add uproxy router')
+def step_imp(context):
+    assert context.uproxy_group != None
+    body = {
+        "group_id": context.uproxy_group['group_id'],
+        "max_frontend_connect_num": "256",
+        "user": "test_uproxy",
+        "password": "QWEasd123",
+        "is_rws_enable": "true",
+        "is_sync": "true",
+    }
+    api_request_post(context, "/uproxy_router/add_router", body)
+
+
+@then(
+    u'the Uproxy router list {should_or_not:should_or_not} contains the Uproxy router'
+)
+def step_impl(context, should_or_not):
+    assert context.uproxy_group != None
+
+    resp = api_get(context, "uproxy_router/list_router", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.data[] | select(.group_id == "{0}")'.format(
+            context.uproxy_group['group_id']), resp)
+    assert (match != None and should_or_not) or (match == None and
+                                                 not should_or_not)
+
+
+@when(u'I found {count:int} Uproxy router, or I skip the test')
+def step_impl(context, count):
+    resp = api_get(context, "uproxy_router/list_router", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first('.data[]', resp)
+    if match is None:
+        context.scenario.skip("Found no Uproxy router with Uproxy router")
+    else:
+        context.uproxy_group = match
+
+
+@when(u'I add uproxy roter backend')
+def step_imp(context):
+    assert context.uproxy_group != None
+    assert context.mysql_group != None
+    router_user = "test_uproxy"
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
+    })
+    master = pyjq.first('.data[]|select(."role" == "STATUS_MYSQL_MASTER")',
+                        resp)
+    slave = pyjq.first('.data[]|select(."role" == "STATUS_MYSQL_SLAVE")', resp)
+    assert master is not None
+    assert slave is not None
+    addrs = "{0},{1}".format(master['server_addr'], slave['server_addr'])
+    ports = "{0},{1}".format(master['port'], slave['port'])
+    mysql_ids = "{0},{1}".format(master['mysql_id'], slave['mysql_id'])
+    master["root_password"] = get_mysql_instance_root_password(
+        context, master["mysql_id"])
+    mysql = master
+    api_request_post(
+        context, "database/create_mysql_user", {
+            "group_id": mysql['group_id'],
+            "admin_user": "root",
+            "admin_password": master["root_password"],
+            "mysql_connect_type": "socket",
+            "master_instance": mysql['mysql_id'],
+            "user": router_user,
+            "user_host": "%",
+            "password": "QWEasd123",
+            "grants": "all privileges on *.*",
+            "is_sync": "true",
+        })
+
+    body = {
+        "group_id": context.uproxy_group['group_id'],
+        "user": router_user,
+        "is_takeover": "true",
+        "mysql_group_id": context.mysql_group[0]["group_id"],
+        "mysql_ids": mysql_ids,
+        "addrs": addrs,
+        "ports": ports,
+        "mbconnlimits": ",",
+        "master_slaves": "STATUS_MYSQL_MASTER,STATUS_MYSQL_SLAVE",
+        "": "1",
+        "is_sync": "true",
+    }
+
+    api_request_post(context, "/uproxy_router/add_backend", body)
+
+
+@then(u'the Uproxy router list backend should add succeed in {duration:time}')
+def step_imp(context, duration):
+    assert context.uproxy_group != None
+    assert context.mysql_group != None
+
+    def condition(context, flag):
+        resp = api_get(context, "uproxy_router/list_backend", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first(
+            '.data | any(."mysql_group_id" == "{0}")'.format(
+                context.mysql_group[0]["group_id"]), resp)
+        if match is not False:
+            return True
+
+    waitfor(context, condition, duration)
