@@ -1,3 +1,4 @@
+#!/bin/bash
 # ftp setting
 export FTP_URL="ftp://ftp:ftp@10.186.18.20"
 

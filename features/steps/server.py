@@ -65,8 +65,17 @@ def step_impl(context, s, comps):
     })
     conditions = map(lambda comp: 'select(has("{0}_status"))'.format(comp),
                      comps)
-    condition = '.data[] | ' + " | ".join(conditions)
+    condition = '.data[] | ' + " | ".join(conditions) + "|" + '.server_ip'
+    servers_ip = pyjq.all(condition, resp)
 
+    temp = {}
+    for server_ip in servers_ip:
+        resp_count = api_get(context, "/server/mysql/count", {
+            "server_ip": server_ip,
+        })
+        temp[server_ip] = resp_count
+    dict_servers_ip = sorted([(v, k) for k, v in temp.items()])
+    condition = '.data[] |  select(."server_ip"=="' + dict_servers_ip[0][1] + '")'
     match = pyjq.first(condition, resp)
     if match is None:
         context.scenario.skip(

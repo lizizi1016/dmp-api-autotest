@@ -41,13 +41,13 @@ class umcHander:
             res = self.post(short_url, data)
         except Exception as e:
             error_message = e.read()
-            print "[error]connect to umc failed:" + error_message
+            print ("[error]connect to umc failed:" + error_message)
             return
         j = json.loads(res)
         progress_url = "progress?id={}".format(j["progress_id"])
         step = 0
-        print ""
-        print "====================START===================="
+        print ("")
+        print ("====================START====================")
         while True:
             try:
                 res = self.get(progress_url)
@@ -63,22 +63,22 @@ class umcHander:
                 desc = progress_data.get("desc", "").encode('utf-8')
             # print total
             if step == 0:
-                print desc
+                print (desc)
                 step = step + 1
             # print steps
             steps = progress_data["steps"]
             current_step = progress_data.get("step", 0)
             while step <= current_step and current_step > 0:
-                print steps[step - 1].encode('utf-8')
+                print (steps[step - 1].encode('utf-8'))
                 step = step + 1
             if done:
-                print done
+                print (done)
                 break
             if err:
-                print err
+                print (err)
                 exit(1)
             time.sleep(1)
-        print "=====================END====================="
+        print ("=====================END=====================")
 
     def run_from_json(self, data):
         self.post_wait_progress(data["url"], data["json"])
@@ -102,4 +102,4 @@ if __name__ == "__main__":
             for data in data_json:
                 u.run_from_json(data)
         else:
-            print "data json is invalid"
+            print ("data json is invalid")
