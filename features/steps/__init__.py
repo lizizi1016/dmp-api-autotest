@@ -1,6 +1,7 @@
 from behave import *
 from framework.api import *
 import parse
+import re
 
 
 @parse.with_pattern(r"should( not)?")
@@ -20,6 +21,19 @@ def parse_strings(text):
 
 
 register_type(strings=parse_strings)
+
+
+@parse.with_pattern(r"(\s*[^\s]+\s*:\s*[^\s]+,?)+")
+def parse_option_values(text):
+    temp = text.split(', ')
+    dict_values = {}
+    for value in temp:
+        arr = value.split(":")
+        dict_values[arr[0].lstrip()] = arr[1].lstrip()
+    return dict_values
+
+
+register_type(option_values=parse_option_values)
 
 
 @parse.with_pattern(r"[^\s]+")
