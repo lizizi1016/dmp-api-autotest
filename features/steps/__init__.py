@@ -29,7 +29,7 @@ def parse_option_values(text):
     dict_values = {}
     for value in temp:
         arr = value.split(":")
-        dict_values[arr[0].lstrip()] = arr[1].lstrip()
+        dict_values[arr[0].strip()] = arr[1].strip()
     return dict_values
 
 
