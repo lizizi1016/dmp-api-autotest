@@ -1,31 +1,32 @@
-from behave import *
-from framework.api import *
 import pyjq
+from common import *
 
 use_step_matcher("cfparse")
 
 
-@when(u'I add a RTO templates, {template_values:option_values}')
-def step_impl(context, template_values):
+@when(u'I add a RTO template')
+def step_impl(context):
+    rto_template_name = "api_rto_" + generate_id()
     template_params = {
-        "name": template_values['name'],
-        "sla_rto": template_values['sla_rto'],
-        "sla_rto_levels": template_values['sla_rto_levels'],
+        "name": rto_template_name,
+        "sla_rto": 300,
+        "sla_rto_levels": "10,50,200",
         "sla_rto_te": "500",
-        "sla_type": template_values['type']
+        "sla_type": "rto"
     }
-    api_post(context, "sla/add", template_params)
+    api_request_post(context, "sla/add", template_params)
+    context.rto_template_name = {"name": rto_template_name}
 
 
-@Then(u'assert create RTO templates succeed, {template_values:option_values}')
-def step_impl(context, template_values):
-    resp = api_get(context, '/sla/list')
-    conditions = '.[] | select(."name"=="' + template_values['name'] + '") | select (."sla_rto_levels"=="' + \
-                 template_values['sla_rto_levels'] + '") | select(."sla_rto"=="' + template_values[
-                     'sla_rto'] + '") | select(."sla_type"=="' + template_values['type'] + '")'
-    match = pyjq.first(conditions, resp)
-    if match is not None:
-        assert True
-    else:
-        print("Create RTO template failed !")
-        assert False
+@then(
+    u'the Highly Available policy list {should_or_not:should_or_not} contains the RTO template'
+)
+def step_impl(context, should_or_not):
+    assert context.rto_template_name != None
+    rto_template_name = context.rto_template_name["name"]
+
+    resp = api_get(context, "sla/list")
+    match = pyjq.first(
+        '.[] | select(."name"=="{0}")'.format(rto_template_name), resp)
+    assert (match != None and should_or_not) or (match == None and
+                                                 not should_or_not)
