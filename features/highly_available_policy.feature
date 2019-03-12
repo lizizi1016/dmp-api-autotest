@@ -1,6 +1,5 @@
 Feature: Highly Available policy
   
-  @wip
   Scenario Outline: MySQL004-Highly Available policy add RTO/RPO template
 	When I add a <type> template
 	Then the response is ok
@@ -11,7 +10,6 @@ Feature: Highly Available policy
 	  | rto  |
 	  | rpo  |
   
-  @wip
   Scenario Outline: MySQL007-update RTO/RPO template configuration
 	When I found a valid <type> template, or I skip the test
 	And I update the <type> template configuration, <config>
@@ -29,7 +27,7 @@ Feature: Highly Available policy
 	And I remove the <type> template
 	Then the response is ok
 	And the <type> template should not exist
-
+	
 	Examples: sla type
 	  | type |
 	  | rto  |
