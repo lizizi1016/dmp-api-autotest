@@ -128,7 +128,8 @@ def step_imp(context, type):
     assert context.sla_template != None
     template_params = {
         "name": context.sla_template,
-        "sla_type": type
+        "sla_type": type,
+        "is_sync": True,
     }
     api_request_post(context, "sla/remove", template_params)
 
