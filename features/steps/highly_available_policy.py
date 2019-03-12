@@ -15,7 +15,7 @@ def step_impl(context, type):
             "sla_rto_levels": "10,50,200",
             "sla_rto_te": "500",
             "sla_type": type,
-            "is_sync": "true",
+            "is_sync": True,
         }
     elif type == 'rpo':
         template_params = {
@@ -24,7 +24,7 @@ def step_impl(context, type):
             "sla_rpo_levels": "10,50,200",
             "sla_rpo_error_levels": "20,60,600",
             "sla_type": type,
-            "is_sync": "true",
+            "is_sync": True,
         }
 
     print(template_params)
@@ -78,7 +78,7 @@ def step_impl(context, type, template_values):
             "sla_rto_levels": template_values['sla_rto_levels'],
             "sla_rto_te": "500",
             "sla_type": type,
-            "is_sync": "true",
+            "is_sync": True,
         }
         context.sla_rto_levels = template_values['sla_rto_levels']
         context.sla_rto = template_values['sla_rto']
@@ -89,7 +89,7 @@ def step_impl(context, type, template_values):
             "sla_rpo_levels": template_values['sla_rpo_levels'],
             "sla_rpo_error_levels": template_values['sla_rpo_error_levels'],
             "sla_type": type,
-            "is_sync": "true",
+            "is_sync": True,
         }
         context.sla_rpo = template_values['sla_rpo']
         context.sla_rpo_levels = template_values['sla_rpo_levels']
@@ -131,3 +131,29 @@ def step_imp(context, type):
         "sla_type": type
     }
     api_request_post(context, "sla/remove", template_params)
+
+
+@then(u'the {type:string} template {should_or_not:should_or_not} be {template_values:option_values}')
+def step_imp(context, type, should_or_not, template_values):
+    assert context.sla_template != None
+    match = None
+    if type == 'rto':
+        assert context.sla_rto_levels != None
+        assert context.sla_rto != None
+
+        resp = api_get(context, "sla/list")
+        condition = '.[] | select(."name"=="{0}") | select(."sla_rto_levels"=="{1}") | select(."sla_rto"=="{2}") | select(."sla_type"=="{3}")'.format(
+            context.sla_template, template_values['sla_rto_levels'], template_values['sla_rto'], type)
+        match = pyjq.first(condition, resp)
+    elif type == 'rpo':
+        assert context.sla_rpo != None
+        assert context.sla_rpo_levels != None
+        assert context.sla_rpo_error_levels != None
+
+        resp = api_get(context, "sla/list")
+        condition = '.[] | select(."name"=="{0}") | select(."sla_rpo_levels"=="{1}") | select(."sla_rpo_error_levels"=="{2}") | select(."sla_rpo"=="{3}") | select(."sla_type"=="{4}")'.format(
+            context.sla_template, template_values['sla_rpo_levels'], template_values['sla_rpo_error_levels'],
+            template_values['sla_rpo'], type)
+        match = pyjq.first(condition, resp)
+
+    assert (match != None and should_or_not) or (match == None and not should_or_not)

@@ -14,7 +14,7 @@ Feature: Highly Available policy
 	When I found a valid <type> template, or I skip the test
 	And I update the <type> template configuration, <config>
 	Then the response is ok
-	And the <type> template should exist
+	And the <type> template should be <config>
 	
 	Examples: update config
 	  | type | config                                                                 |
