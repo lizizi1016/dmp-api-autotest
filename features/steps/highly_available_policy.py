@@ -14,7 +14,8 @@ def step_impl(context, type):
             "sla_rto": 300,
             "sla_rto_levels": "10,50,200",
             "sla_rto_te": "500",
-            "sla_type": type
+            "sla_type": type,
+            "is_sync": "true",
         }
     elif type == 'rpo':
         template_params = {
@@ -22,7 +23,8 @@ def step_impl(context, type):
             "sla_rpo": 0,
             "sla_rpo_levels": "10,50,200",
             "sla_rpo_error_levels": "20,60,600",
-            "sla_type": type
+            "sla_type": type,
+            "is_sync": "true",
         }
 
     print(template_params)
@@ -75,7 +77,8 @@ def step_impl(context, type, template_values):
             "sla_rto": template_values['sla_rto'],
             "sla_rto_levels": template_values['sla_rto_levels'],
             "sla_rto_te": "500",
-            "sla_type": type
+            "sla_type": type,
+            "is_sync": "true",
         }
         context.sla_rto_levels = template_values['sla_rto_levels']
         context.sla_rto = template_values['sla_rto']
@@ -85,7 +88,8 @@ def step_impl(context, type, template_values):
             "sla_rpo": template_values['sla_rpo'],
             "sla_rpo_levels": template_values['sla_rpo_levels'],
             "sla_rpo_error_levels": template_values['sla_rpo_error_levels'],
-            "sla_type": type
+            "sla_type": type,
+            "is_sync": "true",
         }
         context.sla_rpo = template_values['sla_rpo']
         context.sla_rpo_levels = template_values['sla_rpo_levels']
@@ -127,19 +131,3 @@ def step_imp(context, type):
         "sla_type": type
     }
     api_request_post(context, "sla/remove", template_params)
-
-
-@then(u'the {type:string} template {should_or_not:should_or_not} exist')
-def step_imp(context, type, should_or_not, duration):
-    assert context.rto_template != None
-
-    def remove_template(context, flag):
-        res = api_get(context, "sla/list")
-        match = pyjq.first(
-            '.[] | select(."name"=="{0}") | select(."sla_type"=="{1}")'.format(context.rto_template, type), res)
-
-        print(match)
-        if (match == None and should_or_not) or (match != None and not should_or_not):
-            return True
-
-    waitfor(context, remove_template, duration)
