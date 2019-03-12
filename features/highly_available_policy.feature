@@ -10,7 +10,7 @@ Feature: Highly Available policy
 	  | rto  |
 	  | rpo  |
   
-  Scenario Outline: MySQL007-update RTO/RPO template configuration
+  Scenario Outline: MySQL007-Highly Available policy update RTO/RPO template configuration
 	When I found a valid <type> template, or I skip the test
 	And I update the <type> template configuration, <config>
 	Then the response is ok
@@ -22,7 +22,7 @@ Feature: Highly Available policy
 	  | rpo  | sla_rpo: 1, sla_rpo_levels: 10,40,500, sla_rpo_error_levels: 20,50,500 |
   
   
-  Scenario Outline: MySQL008-remove a Highly Available policy template
+  Scenario Outline: MySQL008-Highly Available policy remove RTO/RPO template
 	When I found a valid <type> template, or I skip the test
 	And I remove the <type> template
 	Then the response is ok
