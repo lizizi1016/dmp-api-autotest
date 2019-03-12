@@ -70,7 +70,7 @@ def step_impl(context, s, comps):
 
     temp = {}
     for server_ip in servers_ip:
-        resp_count = api_get(context, "/server/mysql/count", {
+        resp_count = api_get(context, "/server/instance/count", {
             "server_ip": server_ip,
         })
         temp[server_ip] = resp_count
