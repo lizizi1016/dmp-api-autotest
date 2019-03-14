@@ -24,7 +24,7 @@ function init_umc(){
     export HAS_UMC=0
     for RPM in `echo ${ALL_RPM}`
     do
-        echo ${RPM}| grep "umc-[0-9]*.[0-9]*.[0-9]*.[0-9]*-qa.x86_64.rpm" >/dev/null
+        echo ${RPM}| grep "umc-[0-9]*.[0-9]*.[0-9]*.[0-9]*-qa.coverage.x86_64.rpm" >/dev/null
         if [[ $? == 0 ]]; then
             export HAS_UMC=1
             rpm -ivh ${FTP_URL}/${RPM} --prefix=${UMC_HOME}

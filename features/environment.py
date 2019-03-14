@@ -11,3 +11,5 @@ def before_all(context):
         "page_size_to_select_all"]
     context.token = None
     context.mysql_installation_dir = context.settings["mysql_installation_dir"]
+    context.group_sip_1 = context.settings['group_sip_1']
+    context.group_sip_2 = context.settings['group_sip_2']

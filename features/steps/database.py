@@ -272,7 +272,7 @@ def step_impl(context):
         "path": "backupcnfs/backup.xtrabackup",
     })
 
-    api_post(
+    api_request_post(
         context, "database/manual_backup", {
             "is_sync": True,
             "mysql_id": context.mysql_instance["mysql_id"],
@@ -391,7 +391,8 @@ def step_impl(context):
         "mysql_id": context.mysql_instance['mysql_id'],
         "server_id": context.mysql_instance['server_id'],
         "group_id": context.mysql_instance['group_id'],
-        "force": "0"
+        "force": "0",
+        "is_sync": True,
     }
     api_request_post(context, "database/delete_instance", body)
 
@@ -414,7 +415,7 @@ def step_impl(context, duration):
     waitfor(context, condition, duration)
 
 
-@when(u'I start MySQL instance ha enable')
+@when(u'I enable the MySQL instance HA')
 def step_impl(context):
     assert context.mysql_instance != None
     body = {
@@ -436,7 +437,9 @@ def step_imp(context, duration):
         })
         match = pyjq.first(
             '.data[] | select(."mysql_id" == "{0}")'.format(mysql_id), resp)
-        if match is not None and match['uguard_status'] == "UGUARD_ENABLE":
+        if match is not None and match[
+                'uguard_status'] == "UGUARD_ENABLE" and match[
+                    'replication_status'] == "STATUS_MYSQL_REPL_OK":
             return True
 
     waitfor(context, condition, duration)
@@ -480,7 +483,7 @@ def step_impl(context):
         "server_id": context.mysql_instance['server_id'],
         "group_id": context.mysql_instance['group_id'],
         "mysql_id": context.mysql_instance['mysql_id'],
-        "is_sync": "true",
+        "is_sync": True,
     }
     api_request_post(context, "database/stop_mysql_ha_enable", body)
 
@@ -535,7 +538,7 @@ def step_imp(context):
     body = {
         "server_id": context.mysql_instance['server_id'],
         "mysql_id": context.mysql_instance['mysql_id'],
-        "is_sync": "true",
+        "is_sync": True,
     }
     api_request_post(context, "database/stop_mysql_service", body)
 
@@ -568,7 +571,8 @@ def step_imp(context):
     body = {
         "server_id": context.mysql_instance['server_id'],
         "mysql_id": context.mysql_instance['mysql_id'],
-        "origin_data": init_data
+        "origin_data": init_data,
+        "is_sync": True,
     }
     api_request_post(context, "database/reset_database_instance", body)
 
@@ -693,45 +697,43 @@ def step_impl(context, option):
         })
 
 
-@when(u'I add sla protocol')
+@when(u'I bind SLA protocol to the MySQL group')
 def step_imp(context):
     assert context.mysql_instance != None
     body = {
         "group_id": context.mysql_instance['group_id'],
         "add_sla_template": "SLA_RPO_sample",
-        "is_sync": "true",
+        "is_sync": True,
     }
     api_request_post(context, "/database/add_sla_protocol", body)
 
 
-@then(u'sla protocol should add succeed in {duration:time}')
-def step_imp(context, duration):
+@then(u'SLA protocol of the MySQL group should be binded')
+def step_imp(context,):
     assert context.mysql_instance != None
+    res = api_get(context, "database/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.data[] | select(.group_id == "{0}")'.format(
+            context.mysql_instance["group_id"]), res)
 
-    def condition(context, flag):
-        res = api_get(context, "database/list_group", {
-            "number": context.page_size_to_select_all,
-        })
-        match = pyjq.first(
-            '.data[] | select(.group_id == "{0}")'.format(
-                context.mysql_instance["group_id"]), res)
-
-        if match is not None and match['sla_template'] == "SLA_RPO_sample":
-            return True
-
-    waitfor(context, condition, duration)
+    if match is not None and match['sla_template'] == "SLA_RPO_sample":
+        return True
+    else:
+        assert False
 
 
-@when(u'I start sla protocol')
+@when(u'I enable the SLA protocol of the MySQL group')
 def step_imp(context):
     assert context.mysql_instance != None
     api_request_post(context, "/database/start_sla_protocol", {
         "group_id": context.mysql_instance['group_id'],
-        "is_sync": "true",
+        "is_sync": True,
     })
 
 
-@then(u'sla protocol should started')
+@then(u'SLA protocol should started')
 def step_imp(context):
     assert context.mysql_instance != None
     res = api_get(context, "database/list_group", {
@@ -912,22 +914,20 @@ def step_imp(context):
         })
 
 
-@then(u'the MySQL instance should be detached in {duration:time}')
-def step_imp(context, duration):
+@then(u'the MySQL instance should be not exist')
+def step_imp(context):
     assert context.mysql_group != None
     assert context.mysql_instance != None
-
-    def condition(context, flag):
-        resp = api_get(context, "database/list_instance", {
-            "group_id": context.mysql_group[0]["group_id"],
-        })
-        match = pyjq.first(
-            '.data | any(."mysql_id" == "{0}")'.format(
-                context.mysql_instance['mysql_id']), resp)
-        if match is not True:
-            return True
-
-    waitfor(context, condition, duration)
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
+    })
+    match = pyjq.first(
+        '.data | any(."mysql_id" == "{0}")'.format(
+            context.mysql_instance['mysql_id']), resp)
+    if match is not True:
+        return
+    else:
+        assert False
 
 
 @when(u'I takeover MySQL instance')
@@ -964,6 +964,7 @@ def step_imp(context):
         "resource": "0"
     }
     api_request_post(context, "/database/takeover_instance", body)
+    context.mysql_id = mysql_id
 
 
 def get_master_root_password(context):
@@ -981,27 +982,31 @@ def get_master_root_password(context):
     return root_password
 
 
-@then(u'takeover MySQL instance should succeed in {duration:time}')
-def step_imp(context, duration):
+@then(u'the MySQL instance should be listed')
+def step_imp(context):
     assert context.mysql_group != None
-
-    def condition(context, flag):
-        res = api_get(context, "database/list_group", {
-            "number": context.page_size_to_select_all,
+    res = api_get(context, "database/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.data[] | select(.group_instance_num == "2" and ."group_id" == "{0}")'.
+        format(context.mysql_instance["group_id"]), res)
+    if match is not None:
+        resp = api_get(context, "database/list_instance", {
+            "group_id": context.mysql_instance["group_id"],
         })
-        match = pyjq.first(
-            '.data[] | select(.group_instance_num == "2" and ."group_id" == "{0}")'
-            .format(context.mysql_instance["group_id"]), res)
-        if match is not None:
-            resp = api_get(context, "database/list_instance", {
-                "group_id": context.mysql_instance["group_id"],
-            })
-            res = pyjq.first(
-                '.data|any(."mysql_status" == "STATUS_MYSQL_HEALTH_BAD")', resp)
-            if res is not True:
-                return True
+        res = pyjq.first(
+            '.data|any(."mysql_status" == "STATUS_MYSQL_HEALTH_BAD")', resp)
+        if res is not True:
+            return
+        else:
+            assert False
 
-    waitfor(context, condition, duration)
+    results = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
+    })
+    context.mysql_instance = pyjq.first(
+        '.data[] | select(."uguard_status" == "UGUARD_DISABLE")', results)
 
 
 @when(u'I exclude ha MySQL instance')
@@ -1018,7 +1023,7 @@ def step_imp(context):
     """)
 
 
-@when(u'I add sla protocol "{sla}"')
+@when(u'I add SLA protocol "{sla}"')
 def step_imp(context, sla):
     assert context.mysql_group != None
     body = {
@@ -1029,7 +1034,7 @@ def step_imp(context, sla):
     api_request_post(context, "/database/add_sla_protocol", body)
 
 
-@then(u'sla protocol "{sla}" should add succeed in {duration:time}')
+@then(u'SLA protocol "{sla}" should add succeed in {duration:time}')
 def step_imp(context, duration, sla):
     assert context.mysql_group != None
 
@@ -1160,9 +1165,10 @@ def step_imp(context, duration):
 
     waitfor(context, condition, duration)
 
-@when(u'I add the ip "{ip}" to sip pool')
-def step_imp(context, ip):
-    sip = ip
+
+@when(u'I add the ip to sip pool')
+def step_imp(context):
+    sip = context.group_sip_1
     api_request_post(context, "sippool/add", {
         "sip": sip,
         "is_sync": "true",
@@ -1351,7 +1357,7 @@ def get_mongodb_installation_file(context):
     return get_installation_file(context, "mongodb")
 
 
-@then(u'MongoDB instance should add succeed in {duration:time}')
+@then(u'the MongoDB instance should add succeed in {duration:time}')
 def step_imp(context, duration):
     assert context.mongodb_group != None
 
@@ -1400,17 +1406,17 @@ def step_imp(context, role):
         "number": context.page_size_to_select_all,
     })
     if role == "slave":
-        role == "STATUS_MONGODB_SECONDARY"
+        role = "STATUS_MONGODB_SECONDARY"
     else:
-        role == "STATUS_MONGODB_PRIMARY"
+        role = "STATUS_MONGODB_PRIMARY"
     condition = '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_OK")'
-    masters = pyjq.all(
+    masters = pyjq.first(
         condition + ' | select(."mongodb_is_primary" == "{0}")'.format(role),
         resp)
-    slaves = pyjq.all(
+    slaves = pyjq.first(
         condition + ' | select(."mongodb_is_primary" == "{0}")'.format(role),
         resp)
-    if masters is None:
+    if masters is None and slaves is None:
         context.scenario.skip("no found a MongoDB group with MongoDB instance")
         return
     else:
@@ -1420,22 +1426,24 @@ def step_imp(context, role):
             context.mongodb_info = masters
 
 
-@when(u'I action {action:string} MongoDB instance')
+@when(u'I action {action:string} the MongoDB instance')
 def step_imp(context, action):
     assert context.mongodb_info != None
+    print("test_oupt")
+    print(context.mongodb_info)
     if action.lower() == "stop":
         api_request_post(context, "/mongodb/stop_instance", {
-            "mongodb_id": context.mongodb_info[0]['mongodb_id'],
-            "is_sync": "true",
+            "mongodb_id": context.mongodb_info['mongodb_id'],
+            "is_sync": True,
         })
     else:
         api_request_post(context, "/mongodb/start_instance", {
-            "mongodb_id": context.mongodb_info[0]['mongodb_id'],
-            "is_sync": "true",
+            "mongodb_id": context.mongodb_info['mongodb_id'],
+            "is_sync": True,
         })
 
 
-@then(u'MongoDB instance should {status:string} in {duration:time}')
+@then(u'the MongoDB instance should {status:string} in {duration:time}')
 def step_imp(context, status, duration):
     assert context.mongodb_info != None
     if status == "stopped":
@@ -1445,8 +1453,8 @@ def step_imp(context, status, duration):
                 "number": context.page_size_to_select_all,
             })
             match = pyjq.first(
-                '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_BAD" ."mongodb_id" == "{0}")'
-                .format(context.mongodb_info[0]['mongodb_id']), resp)
+                '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_BAD" and ."mongodb_id" == "{0}")'
+                .format(context.mongodb_info['mongodb_id']), resp)
             if match is not None:
                 return True
 
@@ -1458,8 +1466,8 @@ def step_imp(context, status, duration):
                 "number": context.page_size_to_select_all,
             })
             match = pyjq.first(
-                '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_OK" ."mongodb_id" == "{0}")'
-                .format(context.mongodb_info[0]['mongodb_id']), resp)
+                '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_OK" and ."mongodb_id" == "{0}")'
+                .format(context.mongodb_info['mongodb_id']), resp)
             if match is not None:
                 return True
 
@@ -1470,7 +1478,7 @@ def step_imp(context, status, duration):
 def step_imp(context):
     assert context.mongodb_info != None
     api_request_post(context, "/mongodb/remove_instance", {
-        "mongodb_id": context.mongodb_info[0]['mongodb_id'],
+        "mongodb_id": context.mongodb_info['mongodb_id'],
         "is_sync": "true",
     })
 
@@ -1487,7 +1495,7 @@ def step_impl(context, duration):
         })
         match = pyjq.first(
             '.[] | select(.mongodb_id == "{0}")'.format(
-                context.mongodb_info[0]['mongodb_id']), resp)
+                context.mongodb_info['mongodb_id']), resp)
         if match is None:
             return True
 
@@ -1538,7 +1546,7 @@ def step_impl(context):
         context.uproxy_group = match
 
 
-@when(u'I found a server without uproxy')
+@when(u'I found a server without Uproxy instance')
 def step_impl(context):
     resp = api_get(context, "server/list", {
         "number": context.page_size_to_select_all,
@@ -1618,7 +1626,7 @@ def step_impl(context, count):
         context.uproxy_group = match
 
 
-@when(u'I add uproxy router')
+@when(u'I add Uproxy router')
 def step_imp(context):
     assert context.uproxy_group != None
     body = {
@@ -1660,7 +1668,7 @@ def step_impl(context, count):
         context.uproxy_group = match
 
 
-@when(u'I add uproxy roter backend')
+@when(u'I add Uproxy router backend')
 def step_imp(context):
     assert context.uproxy_group != None
     assert context.mysql_group != None
@@ -1703,14 +1711,15 @@ def step_imp(context):
         "ports": ports,
         "mbconnlimits": ",",
         "master_slaves": "STATUS_MYSQL_MASTER,STATUS_MYSQL_SLAVE",
-        "": "1",
         "is_sync": "true",
     }
 
     api_request_post(context, "/uproxy_router/add_backend", body)
 
 
-@then(u'the Uproxy router list backend should add succeed in {duration:time}')
+@then(
+    u'the Uproxy router backend list should contains the backend in {duration:time}'
+)
 def step_imp(context, duration):
     assert context.uproxy_group != None
     assert context.mysql_group != None
@@ -1723,6 +1732,358 @@ def step_imp(context, duration):
             '.data | any(."mysql_group_id" == "{0}")'.format(
                 context.mysql_group[0]["group_id"]), resp)
         if match is not False:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(
+    u'I found {count:int} Uproxy router without backend instance, or I skip the test'
+)
+def step_impl(context, count):
+    resp = api_get(context, "uproxy_router/list_router", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first('.data[]|select(."instance_num" == "0")', resp)
+    if match is None:
+        context.scenario.skip("Found no Uproxy router with Uproxy router")
+    else:
+        context.uproxy_router = match
+
+
+@when(u'I remove the Uproxy router')
+def step_imp(context):
+    assert context.uproxy_router != None
+    api_request_post(
+        context, "/uproxy_router/remove_router", {
+            "user": context.uproxy_router['user'],
+            "group_id": context.uproxy_router['group_id'],
+            "is_sync": "true",
+        })
+
+
+@then(u'Uproxy router should not contains the Uproxy router in {duration:time}')
+def step_imp(context, duration):
+    assert context.uproxy_router != None
+
+    def condition(context, flag):
+        resp = api_get(context, "uproxy_router/list_router", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first(
+            '.data[]|select(."group_id" == "{0}")'.format(
+                context.uproxy_router['group_id']), resp)
+        if match is None:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(u'I remove the Uproxy group')
+def step_imp(context):
+    assert context.uproxy_group != None
+    api_request_post(context, "/uproxy/remove_group ", {
+        "group_id": context.uproxy_group['group_id'],
+        "is_sync": True,
+    })
+
+
+@then(u'the Uproxy group list should not contain the Uproxy group')
+def step_imp(context):
+    assert context.uproxy_group != None
+    resp = api_get(context, "uproxy/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.data[] | select(."group_id" == "{0}")'.format(
+            context.uproxy_group['group_id']), resp)
+    if match is None:
+        return
+    else:
+        assert False
+
+
+@when(
+    u'I update MySQL configuration with host connect "{option:string}" to "{option_value:string}"'
+)
+def step_impl(context, option, option_value):
+    assert context.mysql_instance != None
+    mysql = context.mysql_instance
+
+    query_resp = api_post(
+        context, "modify_config/query", {
+            "super_user": "root",
+            "super_password": mysql["root_password"],
+            "mysql_connect_type": "server_addr",
+            "mysql_ids": mysql["mysql_id"],
+            "option": option,
+            "option_value": option_value,
+        })
+
+    condition = '.[] | select(."option" == "{0}")'.format(option)
+    assert len(pyjq.all(condition, query_resp)) == 1
+
+    api_request_post(context, "modify_config/save", {
+        "config": json.dumps(query_resp),
+        "is_sync": True,
+    })
+
+
+@when(u'I action {action:string} role {role:string} on HA instance')
+def step_imp(context, action, role):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
+    })
+    master_info = pyjq.first('.data[] | select(.role == "{0}")'.format(role),
+                             resp)
+    slave_info = pyjq.all('.data[] | select(.role == "{0}")'.format(role), resp)
+    if action.lower() == "stop":
+        if role == "STATUS_MYSQL_MASTER":
+            api_request_post(
+                context, "database/stop_mysql_ha_enable", {
+                    "server_id": master_info['server_id'],
+                    "group_id": master_info['group_id'],
+                    "mysql_id": master_info['mysql_id'],
+                    "is_sync": "true",
+                })
+        else:
+            for slave in slave_info:
+                api_request_post(
+                    context, "database/stop_mysql_ha_enable", {
+                        "server_id": slave['server_id'],
+                        "group_id": slave['group_id'],
+                        "mysql_id": slave['mysql_id'],
+                        "is_sync": "true",
+                    })
+    else:
+        if role == "STATUS_MYSQL_MASTER":
+            api_request_post(
+                context, "database/start_mysql_ha_enable", {
+                    "server_id": master_info['server_id'],
+                    "group_id": master_info['group_id'],
+                    "mysql_id": master_info['mysql_id'],
+                    "is_sync": "true",
+                })
+        else:
+            for slave in slave_info:
+                api_request_post(
+                    context, "database/start_mysql_ha_enable", {
+                        "server_id": slave['server_id'],
+                        "group_id": slave['group_id'],
+                        "mysql_id": slave['mysql_id'],
+                        "is_sync": "true",
+                    })
+
+
+@then(u'the server uguard should running')
+def step_impl(context):
+    resp = api_get(context, "server/list", {
+        "number": context.page_size_to_select_all,
+    })
+    condition = '.data[] | select(."uguard-agent_status" and ."urman-agent_status" or ."uguard-mgr_status")'
+    match = pyjq.all(condition, resp)
+    assert match is not None
+    for temp in match:
+        if temp['uguard-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] and \
+            temp['urman-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] or \
+            temp['uguard-mgr_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]:
+            return
+        else:
+            assert False
+
+
+@when(u'I action {action:string} component {component:string} in server')
+def step_imp(context, action, component):
+    resp = api_get(context, "server/list", {
+        "number": context.page_size_to_select_all,
+    })
+    com_status = component + "_status"
+    server_info = pyjq.first(
+        '.data[] |  select(."{0}" == "STATUS_OK(master)")'.format(com_status),
+        resp)
+    context.server = server_info
+    context.execute_steps(u"""
+       When I action {0} component {1}
+       """.format(action, component))
+
+
+@when(u'I action {action:string} component {component:string}')
+def step_imp(context, action, component):
+    assert context.server != None
+    server_info = context.server
+    if action.lower() == "stop":
+        api_request_post(
+            context, "/server/pause", {
+                "server_id": server_info['server_id'],
+                "component": component,
+                "is_sync": "true",
+            })
+    else:
+        api_request_post(
+            context, "/server/start", {
+                "server_id": server_info['server_id'],
+                "component": component,
+                "is_sync": "true",
+            })
+
+
+@then(u'component {component:string} should stopped in {duration:time}')
+def step_imp(context, component, duration):
+    assert context.server != None
+    com_status = component + "_status"
+
+    def condition(context, flag):
+        resp = api_get(context, "server/list", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first(
+            '.data[] |  select(."{0}" == "STATUS_STOPPED(master)" and ."server_id" == "{1}")'
+            .format(com_status, context.server['server_id']), resp)
+        if match is not None:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@then(u'component {component:string} should started in {duration:time}')
+def step_imp(context, component, duration):
+    assert context.server != None
+    com_status = component + "_status"
+
+    def condition(context, flag):
+        resp = api_get(context, "server/list", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first(
+            '.data[] |  select(."{0}" == "STATUS_OK" or ."{0}" == "STATUS_OK(master)" and ."server_id" == "{1}")'
+            .format(com_status, context.server['server_id']), resp)
+        if match is not None:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(u'I query the MySQL group "{query:any}" with sip')
+def step_impl(context, query):
+    assert context.mysql_group != None
+    group = context.mysql_group[0]
+
+    resp = api_get(context, "helper/mysql/query_by_sip", {
+        "mysql_group_id": group["group_id"],
+        "sql": query,
+    })
+    context.mysql_resp = resp
+
+
+@when(u'I execute the MySQL group "{query:any}" with sip')
+def step_impl(context, query):
+    assert context.mysql_group != None
+    group = context.mysql_group[0]
+
+    resp = api_get(context, "helper/mysql/query_by_sip", {
+        "mysql_group_id": group["group_id"],
+        "sql": query,
+    })
+    print('testout')
+    print(group['sip'])
+
+
+@when(u'I pause SLA protocol')
+def step_imp(context):
+    assert context.mysql_instance != None
+    api_request_post(context, "/database/pause_sla_protocol", {
+        "group_id": context.mysql_instance['group_id'],
+        "is_sync": True,
+    })
+
+
+@then(u'SLA protocol should paused')
+def step_imp(context):
+    assert context.mysql_instance != None
+    res = api_get(context, "database/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.data[] | select(.group_id == "{0}")'.format(
+            context.mysql_instance["group_id"]), res)
+    if match['sla_enable'] == "DISABLE":
+        return
+    assert False
+
+
+@when(u'I unbind SLA protocol')
+def step_imp(context):
+    assert context.mysql_instance != None
+    api_request_post(context, "/database/remove_sla_protocol", {
+        "group_id": context.mysql_instance['group_id'],
+        "is_sync": True,
+    })
+
+
+@then(u'SLA protocol should not exist in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_instance != None
+
+    def condition(context, flag):
+        res = api_get(context, "database/list_group", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first(
+            '.data[] | select(.group_id == "{0}")'.format(
+                context.mysql_instance["group_id"]), res)
+
+        if match is not None and 'sla_template' not in match:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@then(u'alert code {code:string} should not exist in {duration:time}')
+def step_imp(context, code, duration):
+
+    def condition(context, flag):
+        resp = api_get(context, "/alert_record/list_search", {
+            'order_by': 'timestamp',
+            'ascending': 'false',
+        })
+        alert_info = pyjq.first('.data[]|select(."code" == "{0}")'.format(code),
+                                resp)
+        if alert_info is None:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(u'I isolate the MySQL instance')
+def step_imp(context):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
+    })
+    slave_info = pyjq.first('.data[] | select(.role == "STATUS_MYSQL_SLAVE")',
+                            resp)
+    assert slave_info is not None
+    context.mysql_instance = slave_info
+    body = {
+        "group_id": slave_info['group_id'],
+        "mysql_id": slave_info['mysql_id'],
+        "is_sync": True,
+    }
+    api_request_post(context, "/database/isolate_mysql", body)
+
+
+@then(u'alert code {code:string} should contains in {duration:time}')
+def step_imp(context, code, duration):
+
+    def condition(context, flag):
+        resp = api_get(context, "/alert_record/list_search", {
+            'order_by': 'timestamp',
+            'ascending': 'false',
+        })
+        alert_info = pyjq.first('.data[]|select(."code" == "{0}")'.format(code),
+                                resp)
+        if alert_info is not None:
             return True
 
     waitfor(context, condition, duration)

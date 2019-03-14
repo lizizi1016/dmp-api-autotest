@@ -52,7 +52,7 @@ Feature: database
   @test @case.272
   Scenario: database/start MySQL instance ha enable should succeed
     When I found a running MySQL instance, or I skip the test
-    And I start MySQL instance ha enable
+    And I enable the MySQL instance HA
     Then the response is ok
     And MySQL instance ha enable should started in 1m
 
@@ -122,15 +122,23 @@ Feature: database
     When I execute the MySQL instance "use mysql;DROP TABLE testcase;"
 
   @test
-  Scenario: database/add sla protocol and start
+  Scenario: MySQL-023 database/add SLA protocol and start or pause
     When I found a running MySQL instance, or I skip the test
-    And I add sla protocol
+    And I bind SLA protocol to the MySQL group
     Then the response is ok
-    And sla protocol should add succeed in 1m
+    And SLA protocol of the MySQL group should be binded
 
-    When I start sla protocol
+    When I enable the SLA protocol of the MySQL group
     Then the response is ok
-    And sla protocol should started
+    And SLA protocol should started
+
+    When I pause SLA protocol
+    Then the response is ok
+    And SLA protocol should paused
+
+    When I unbind SLA protocol
+    Then the response is ok
+    And SLA protocol should not exist in 1m
 
   @test @case.272
   Scenario: master-slave switching when kill three master pid
@@ -162,7 +170,7 @@ Feature: database
       |GRANT ALL PRIVILEGES ON *.* TO 'testcase'@'%'|
 
   @test
-  Scenario: data/update MySQL user password
+  Scenario: MySQL019-data/update MySQL user password
     When I found a running MySQL instance, or I skip the test
     And I create MySQL user "test55" and grants "all privileges on *.*"
     Then the response is ok
@@ -185,10 +193,10 @@ Feature: database
     And I detach MySQL instance
     Then the response is ok
 
-    Then the MySQL instance should be detached in 2m
+    Then the MySQL instance should be not exist in 2m
     When I takeover MySQL instance
     Then the response is ok
-    And takeover MySQL instance should succeed in 2m
+    And the MySQL instance should be listed in 2m
 
   @test
   Scenario: MGR005-idempotent exclude and include ha
@@ -197,7 +205,7 @@ Feature: database
     Then the response is ok
     And MySQL instance ha enable should stopped in 1m
 
-    When I start MySQL instance ha enable
+    When I enable the MySQL instance HA
     Then the response is ok
     And MySQL instance ha enable should started in 1m
 
@@ -205,7 +213,7 @@ Feature: database
     Then the response is ok
     And MySQL instance ha enable should stopped in 1m
 
-    When I start MySQL instance ha enable
+    When I enable the MySQL instance HA
     Then the response is ok
     And MySQL instance ha enable should started in 1m
 
@@ -213,9 +221,9 @@ Feature: database
   @test
   Scenario: MGR004-SLA downgrade recovery
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
-    And I add sla protocol "SLA_RPO_sample"
+    And I add SLA protocol "SLA_RPO_sample"
     Then the response is ok
-    And sla protocol "SLA_RPO_sample" should add succeed in 1m
+    And SLA protocol "SLA_RPO_sample" should add succeed in 1m
 
     When I start the group SLA protocol
     Then the response is ok
@@ -228,7 +236,7 @@ Feature: database
     And expect alert code "SLA_LEVEL_CHANGED" and detail "P1 to PE3" in 3m
 
 
-    When I start MySQL instance ha enable
+    When I enable the MySQL instance HA
     Then the response is ok
     And MySQL instance ha enable should started in 1m
     And group sla level P1 in 1m
@@ -252,7 +260,7 @@ Feature: database
     And group sla level TE3 in 1m
     And expect alert code "SLA_LEVEL_CHANGED" and detail "T1 to TE3" in 3m
 
-    When I start MySQL instance ha enable
+    When I enable the MySQL instance HA
     Then the response is ok
     And MySQL instance ha enable should started in 1m
     And group sla level T1 in 1m
@@ -260,13 +268,6 @@ Feature: database
   @test
   Scenario: MGR002-restart slave uguard-agent and view instance data
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
-#    And I add the ip "10.20.30.127" to sip pool
-#    Then the response is ok
-
-    When I found a valid SIP, or I skip the test
-    And I configure MySQL group SIP
-    Then the response is ok
-    And update MySQL group SIP successful in 1m
 
     When I action pause MySQL instance component uguard-agent
     Then the response is ok
