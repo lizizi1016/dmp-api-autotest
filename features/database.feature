@@ -1,27 +1,27 @@
 Feature: database
 
   @test @case.272
-  Scenario: database/add_group with SIP should succeed
+  Scenario: MySQL-001-database/add_group with SIP should succeed
     When I found a valid SIP, or I skip the test
     And I add a MySQL group with the SIP
     Then the response is ok
     And the MySQL group list should contains the MySQL group
 
   @test @case.272
-  Scenario: database/add_group should succeed
+  Scenario: MySQL-002-database/add_group should succeed
     When I add a MySQL group
     Then the response is ok
     And the MySQL group list should contains the MySQL group
 
   @test @case.272
-  Scenario: database/remove_group should succeed
+  Scenario: MySQL-003-database/remove_group should succeed
     When I found a MySQL group without MySQL instance, or I skip the test
     And I remove the MySQL group
     Then the response is ok
     And the MySQL group list should not contains the MySQL group
 
   @test @case.272 @slow
-  Scenario: add database instances of m-s should succeed
+  Scenario: MySQL-004-add database instances of m-s should succeed
     When I found a MySQL group without MySQL instance, and without SIP, or I skip the test
     And I found a server with components ustats,udeploy,uguard-agent,urman-agent, or I skip the test
     And I found a valid port, or I skip the test
@@ -43,28 +43,28 @@ Feature: database
 
 
   @test @case.272
-  Scenario: database/remove instance should succeed
+  Scenario: MySQL-005-database/remove instance should succeed
     When I found a running MySQL instance, or I skip the test
     And I remove MySQL instance
     Then the response is ok
     And the MySQL instance list should not contains the MySQL instance
 
   @test @case.272
-  Scenario: database/start MySQL instance ha enable should succeed
+  Scenario: MySQL-006-database/start MySQL instance ha enable should succeed
     When I found a running MySQL instance, or I skip the test
     And I enable the MySQL instance HA
     Then the response is ok
     And MySQL instance HA status should be running in 1m
 
   @test @case.272
-  Scenario: database/stop MySQL instance ha enable should succeed
+  Scenario: MySQL-007-database/stop MySQL instance ha enable should succeed
     When I found a running MySQL instance and uguard enable,or I skip the test
     And I stop MySQL instance ha enable
     Then the response is ok
     And MySQL instance ha enable should stopped in 1m
 
   @test @case.272
-  Scenario: database/configure group SIP
+  Scenario: MySQL-008-database/configure group SIP
     When I found a running MySQL instance, or I skip the test
     And I found a MySQL group without MySQL instance, or I skip the test
     And I configure MySQL group SIP
@@ -72,14 +72,14 @@ Feature: database
     And update MySQL group SIP successful in 1m
 
   @test @case.272
-  Scenario: database/stop MySQL service
+  Scenario: MySQL-009-database/stop MySQL service
     When I found a running MySQL instance, or I skip the test
     And I stop MySQL service
     Then the response is ok
     And stop MySQL service should succeed in 1m
 
   @test @case.272
-  Scenario: database/reset database instance
+  Scenario: MySQL-010-database/reset database instance
     When I found a running MySQL instance, or I skip the test
     And I make a manual backup on the MySQL instance
     Then the response is ok
@@ -93,7 +93,7 @@ Feature: database
     And reset database instance should succeed in 2m
 
   @test @case.272
-  Scenario: database/promote to master
+  Scenario: MySQL-011-database/promote to master
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I promote slave instance to master
     Then the response is ok
@@ -112,7 +112,7 @@ Feature: database
         | replication_applier_status    |
 
   @test @case.272
-  Scenario: create table in instance
+  Scenario: MySQL-012-create table in instance
     When I found a running MySQL instance, or I skip the test
     And I execute the MySQL instance "use mysql;create table testcase(id int auto_increment not null primary key ,uname char(8),gender char(2),birthday date );"
     And I query the MySQL instance "select table_name from information_schema.tables where table_name="testcase";"
@@ -122,7 +122,7 @@ Feature: database
     When I execute the MySQL instance "use mysql;DROP TABLE testcase;"
 
   @test
-  Scenario: MySQL-023-database/add SLA protocol and start or pause
+  Scenario: MySQL-013-database/add SLA protocol and start or pause
     When I found a running MySQL instance, or I skip the test
     And I bind SLA protocol to the MySQL group
     Then the response is ok
@@ -141,7 +141,7 @@ Feature: database
     And SLA protocol should not exist
 
   @test @case.272
-  Scenario: master-slave switching when kill three master pid
+  Scenario: MySQL-014-master-slave switching when kill three master pid
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I found alert code "EXCLUDE_INSTANCE_SUCCESS", or I skip the test
     And I kill three master pid
@@ -151,7 +151,7 @@ Feature: database
 
 
   @test
-  Scenario: MySQL001-database/create MySQL user should succeed
+  Scenario: MySQL-015-database/create MySQL user should succeed
     When I found a running MySQL instance, or I skip the test
     And I create MySQL user "testcase" and grants "all privileges on *.*"
     Then the response is ok
@@ -170,7 +170,7 @@ Feature: database
       |GRANT ALL PRIVILEGES ON *.* TO 'testcase'@'%'|
 
   @test
-  Scenario: MySQL-019-data/update MySQL user password
+  Scenario: MySQL-016-data/update MySQL user password
     When I found a running MySQL instance, or I skip the test
     And I create MySQL user "test55" and grants "all privileges on *.*"
     Then the response is ok
@@ -188,7 +188,7 @@ Feature: database
       |GRANT ALL PRIVILEGES ON *.* TO 'test55'@'%'|
 
   @test
-  Scenario: E2E004-database/takeover MySQL instance
+  Scenario: MySQL-017-database/takeover MySQL instance
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I detach MySQL instance
     Then the response is ok
@@ -199,7 +199,7 @@ Feature: database
     And the MySQL instance should be listed
 
   @test
-  Scenario: MGR005-idempotent exclude and include ha
+  Scenario: MySQL-018-idempotent exclude and include ha
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I exclude ha MySQL instance
     Then the response is ok
@@ -219,7 +219,7 @@ Feature: database
 
 
   @test
-  Scenario: MGR004-SLA downgrade recovery
+  Scenario: MySQL-019-SLA downgrade recovery
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I add SLA protocol "SLA_RPO_sample"
     Then the response is ok
@@ -267,7 +267,7 @@ Feature: database
     And group sla level T1 in 1m
 
   @test
-  Scenario: MGR002-restart slave uguard-agent and view instance data
+  Scenario: MySQL-020-restart slave uguard-agent and view instance data
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
 
     When I action pause MySQL instance component uguard-agent
