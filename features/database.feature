@@ -47,7 +47,7 @@ Feature: database
     When I found a running MySQL instance, or I skip the test
     And I remove MySQL instance
     Then the response is ok
-    And the MySQL instance list should not contains the MySQL instance in 1m
+    And the MySQL instance list should not contains the MySQL instance
 
   @test @case.272
   Scenario: database/start MySQL instance ha enable should succeed
@@ -122,7 +122,7 @@ Feature: database
     When I execute the MySQL instance "use mysql;DROP TABLE testcase;"
 
   @test
-  Scenario: MySQL-023 database/add SLA protocol and start or pause
+  Scenario: MySQL-023-database/add SLA protocol and start or pause
     When I found a running MySQL instance, or I skip the test
     And I bind SLA protocol to the MySQL group
     Then the response is ok
@@ -138,7 +138,7 @@ Feature: database
 
     When I unbind SLA protocol
     Then the response is ok
-    And SLA protocol should not exist in 1m
+    And SLA protocol should not exist
 
   @test @case.272
   Scenario: master-slave switching when kill three master pid
@@ -170,7 +170,7 @@ Feature: database
       |GRANT ALL PRIVILEGES ON *.* TO 'testcase'@'%'|
 
   @test
-  Scenario: MySQL019-data/update MySQL user password
+  Scenario: MySQL-019-data/update MySQL user password
     When I found a running MySQL instance, or I skip the test
     And I create MySQL user "test55" and grants "all privileges on *.*"
     Then the response is ok
@@ -223,7 +223,8 @@ Feature: database
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I add SLA protocol "SLA_RPO_sample"
     Then the response is ok
-    And SLA protocol "SLA_RPO_sample" should add succeed in 1m
+
+    Then SLA protocol "SLA_RPO_sample" should added
 
     When I start the group SLA protocol
     Then the response is ok
@@ -238,7 +239,7 @@ Feature: database
 
     When I enable the MySQL instance HA
     Then the response is ok
-    And MySQL instance ha enable should started in 1m
+    And MySQL instance HA status should be running in 1m
     And group sla level P1 in 1m
 
     When I pause the group SLA protocol
@@ -248,9 +249,9 @@ Feature: database
     Then the response is ok
     And the group SLA protocol should remove succeed in 1m
 
-    When I add sla protocol "SLA_RTO_sample"
+    When I add SLA protocol "SLA_RTO_sample"
     Then the response is ok
-    And sla protocol "SLA_RTO_sample" should add succeed in 1m
+    And SLA protocol "SLA_RTO_sample" should added
     When I start the group SLA protocol
     Then the response is ok
     And the group SLA protocol should started
@@ -262,7 +263,7 @@ Feature: database
 
     When I enable the MySQL instance HA
     Then the response is ok
-    And MySQL instance ha enable should started in 1m
+    And MySQL instance HA status should be running in 1m
     And group sla level T1 in 1m
 
   @test

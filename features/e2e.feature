@@ -66,7 +66,7 @@ Feature: end-to-end
     And I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I add Uproxy router backend
     Then the response is ok
-    And the Uproxy router backend list should contains the backend in 1m
+    And the Uproxy router backend list should contains the backend
 
   Scenario: E2E011-5 remove Uproxy router should succeed
     When I found 1 Uproxy router without backend instance, or I skip the test
@@ -118,7 +118,7 @@ Feature: end-to-end
 
     When I enable the MySQL instance HA
     Then the response is ok
-    And MySQL instance ha enable should started in 2m
+    And MySQL instance HA status should be running in 1m
 
     When I create and insert table in master instance "use mysql;create table test5(id int auto_increment not null primary key ,uname char(8));"
     Then the response is ok
@@ -133,7 +133,7 @@ Feature: end-to-end
 
     When I remove MySQL instance
     Then the response is ok
-    And the MySQL instance list should not contains the MySQL instance in 1m
+    And the MySQL instance list should not contains the MySQL instance
 
 
   Scenario: MGR001-uguard-mgr restart

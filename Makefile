@@ -3,7 +3,7 @@ default: prepare test
 prepare:
 	behave features/prepare.feature
 test:
-	behave  -f allure_behave.formatter:AllureFormatter -o ./log/ features/server.feature features/sippool.feature features/db_config.feature features/urman.feature features/database.feature features/ushard.feature features/e2e.feature
+	behave  -f allure_behave.formatter:AllureFormatter -o ./log/ features/server.feature features/sippool.feature features/db_config.feature features/urman.feature features/database.feature features/ushard.feature features/e2e.feature features/highly_available_policy.feature
 install_deps:
 	pip install -r requirements.txt
 env_dmp:

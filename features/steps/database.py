@@ -398,21 +398,16 @@ def step_impl(context):
 
 
 @then(
-    u'the MySQL instance list should not contains the MySQL instance in {duration:time}'
+    u'the MySQL instance list should not contains the MySQL instance'
 )
 def step_impl(context, duration):
     assert context.mysql_instance != None
     mysql_id = context.mysql_instance["mysql_id"]
-
-    def condition(context, flag):
-        resp = api_get(context, "database/list_instance",
-                       {"number": context.page_size_to_select_all})
-        match = pyjq.first('.data | any(."mysql_id" == "{0}")'.format(mysql_id),
-                           resp)
-        if match is not True:
-            return True
-
-    waitfor(context, condition, duration)
+    resp = api_get(context, "database/list_instance",
+                   {"number": context.page_size_to_select_all})
+    match = pyjq.first('.data | any(."mysql_id" == "{0}")'.format(mysql_id),
+                       resp)
+    assert match is not True
 
 
 @when(u'I enable the MySQL instance HA')
@@ -426,7 +421,7 @@ def step_impl(context):
     api_request_post(context, "database/start_mysql_ha_enable", body)
 
 
-@then(u'MySQL instance ha enable should started in {duration:time}')
+@then(u'MySQL instance HA status should be running in {duration:time}')
 def step_imp(context, duration):
     assert context.mysql_instance != None
 
@@ -1029,27 +1024,22 @@ def step_imp(context, sla):
     body = {
         "group_id": context.mysql_group[0]["group_id"],
         "add_sla_template": sla,
-        "is_sync": "true",
+        "is_sync": True,
     }
     api_request_post(context, "/database/add_sla_protocol", body)
 
 
-@then(u'SLA protocol "{sla}" should add succeed in {duration:time}')
-def step_imp(context, duration, sla):
+@then(u'SLA protocol "{sla}" should added')
+def step_imp(context, sla):
     assert context.mysql_group != None
+    res = api_get(context, "database/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.data[] | select(.group_id == "{0}")'.format(
+            context.mysql_group[0]["group_id"]), res)
 
-    def condition(context, flag):
-        res = api_get(context, "database/list_group", {
-            "number": context.page_size_to_select_all,
-        })
-        match = pyjq.first(
-            '.data[] | select(.group_id == "{0}")'.format(
-                context.mysql_group[0]["group_id"]), res)
-
-        if match is not None and match['sla_template'] == sla:
-            return True
-
-    waitfor(context, condition, duration)
+    assert match is not None and match['sla_template'] == sla
 
 
 @when(u'I start the group SLA protocol')
@@ -1171,7 +1161,7 @@ def step_imp(context):
     sip = context.group_sip_1
     api_request_post(context, "sippool/add", {
         "sip": sip,
-        "is_sync": "true",
+        "is_sync": True,
     })
 
 
@@ -1718,23 +1708,18 @@ def step_imp(context):
 
 
 @then(
-    u'the Uproxy router backend list should contains the backend in {duration:time}'
+    u'the Uproxy router backend list should contains the backend'
 )
-def step_imp(context, duration):
+def step_imp(context):
     assert context.uproxy_group != None
     assert context.mysql_group != None
-
-    def condition(context, flag):
-        resp = api_get(context, "uproxy_router/list_backend", {
-            "number": context.page_size_to_select_all,
-        })
-        match = pyjq.first(
-            '.data | any(."mysql_group_id" == "{0}")'.format(
-                context.mysql_group[0]["group_id"]), resp)
-        if match is not False:
-            return True
-
-    waitfor(context, condition, duration)
+    resp = api_get(context, "uproxy_router/list_backend", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.data | any(."mysql_group_id" == "{0}")'.format(
+            context.mysql_group[0]["group_id"]), resp)
+    assert match is not False
 
 
 @when(
@@ -2021,23 +2006,17 @@ def step_imp(context):
     })
 
 
-@then(u'SLA protocol should not exist in {duration:time}')
-def step_imp(context, duration):
+@then(u'SLA protocol should not exist')
+def step_imp(context):
     assert context.mysql_instance != None
+    res = api_get(context, "database/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.data[] | select(.group_id == "{0}")'.format(
+            context.mysql_instance["group_id"]), res)
 
-    def condition(context, flag):
-        res = api_get(context, "database/list_group", {
-            "number": context.page_size_to_select_all,
-        })
-        match = pyjq.first(
-            '.data[] | select(.group_id == "{0}")'.format(
-                context.mysql_instance["group_id"]), res)
-
-        if match is not None and 'sla_template' not in match:
-            return True
-
-    waitfor(context, condition, duration)
-
+    assert match is not None and 'sla_template' not in match
 
 @then(u'alert code {code:string} should not exist in {duration:time}')
 def step_imp(context, code, duration):
