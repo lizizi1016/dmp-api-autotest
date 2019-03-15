@@ -391,16 +391,16 @@ def step_impl(context):
         "mysql_id": context.mysql_instance['mysql_id'],
         "server_id": context.mysql_instance['server_id'],
         "group_id": context.mysql_instance['group_id'],
-        "force": "0",
+        "force": "1",
         "is_sync": True,
     }
-    api_request_post(context, "database/delete_instance", body)
+    api_request_post(context, "/database/delete_instance", body)
 
 
 @then(
     u'the MySQL instance list should not contains the MySQL instance'
 )
-def step_impl(context, duration):
+def step_impl(context):
     assert context.mysql_instance != None
     mysql_id = context.mysql_instance["mysql_id"]
     resp = api_get(context, "database/list_instance",
@@ -480,7 +480,7 @@ def step_impl(context):
         "mysql_id": context.mysql_instance['mysql_id'],
         "is_sync": True,
     }
-    api_request_post(context, "database/stop_mysql_ha_enable", body)
+    api_request_post(context, "/database/stop_mysql_ha_enable", body)
 
 
 @then(u'MySQL instance ha enable should stopped in {duration:time}')
@@ -535,7 +535,7 @@ def step_imp(context):
         "mysql_id": context.mysql_instance['mysql_id'],
         "is_sync": True,
     }
-    api_request_post(context, "database/stop_mysql_service", body)
+    api_request_post(context, "/database/stop_mysql_service", body)
 
 
 @then(u'stop MySQL service should succeed in {duration:time}')

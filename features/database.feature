@@ -54,7 +54,7 @@ Feature: database
     When I found a running MySQL instance, or I skip the test
     And I enable the MySQL instance HA
     Then the response is ok
-    And MySQL instance ha enable should started in 1m
+    And MySQL instance HA status should be running in 1m
 
   @test @case.272
   Scenario: database/stop MySQL instance ha enable should succeed
@@ -193,10 +193,10 @@ Feature: database
     And I detach MySQL instance
     Then the response is ok
 
-    Then the MySQL instance should be not exist in 2m
+    Then the MySQL instance should be not exist
     When I takeover MySQL instance
     Then the response is ok
-    And the MySQL instance should be listed in 2m
+    And the MySQL instance should be listed
 
   @test
   Scenario: MGR005-idempotent exclude and include ha
@@ -207,7 +207,7 @@ Feature: database
 
     When I enable the MySQL instance HA
     Then the response is ok
-    And MySQL instance ha enable should started in 1m
+    And MySQL instance HA status should be running in 1m
 
     When I stop MySQL instance ha enable
     Then the response is ok
@@ -215,7 +215,7 @@ Feature: database
 
     When I enable the MySQL instance HA
     Then the response is ok
-    And MySQL instance ha enable should started in 1m
+    And MySQL instance HA status should be running in 1m
 
 
   @test
