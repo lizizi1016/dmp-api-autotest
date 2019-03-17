@@ -449,8 +449,7 @@ Feature: database
     And alert code mysql_slave_sql_thread_down should contains in 1m
     And alert code mysql_slave_io_thread_down should contains in 1m
 
-
-
-
-
+  @wip
+  Scenario: demo
+    When I batch takeover the MySQL instance
 
