@@ -2,3 +2,5 @@ behave
 requests
 jq
 yapf
+pyyaml
+lxml
