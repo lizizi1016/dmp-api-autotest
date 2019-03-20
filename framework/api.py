@@ -18,26 +18,28 @@ def api_get_response(context, r=None):
         return r.json()
 
 
-def api_get(context, url_path_segment, params=None):
+def api_get(context, url_path_segment, params=None, files=None):
+    # Files has no use
     r = api_request_op("get", context, url_path_segment, True, params)
     assert r.status_code == 200
     return api_get_response(context, r)
 
 
-def api_post(context, url_path_segment, params=None):
-    r = api_request_op("post", context, url_path_segment, True, params)
+def api_post(context, url_path_segment, params=None, files=None):
+    r = api_request_op("post", context, url_path_segment, True, params, files=files)
     assert r.status_code == 200
     return api_get_response(context, r)
 
 
-def api_request_get(context, url_path_segment, params=None):
+def api_request_get(context, url_path_segment, params=None, files=None):
+    # Files has no use
     r = api_request_op("get", context, url_path_segment, True, params)
     context.r = r
     return r
 
 
-def api_request_post(context, url_path_segment, params=None):
-    r = api_request_op("post", context, url_path_segment, True, params)
+def api_request_post(context, url_path_segment, params=None, files=None):
+    r = api_request_op("post", context, url_path_segment, True, params, files=files)
     context.r = r
     return r
 
@@ -46,7 +48,8 @@ def api_request_op(op,
                    context,
                    url_path_segment,
                    try_login_if_need,
-                   params=None):
+                   params=None,
+                   files=None):
     url = context.base_url + url_path_segment
 
     if context == params:
@@ -61,14 +64,14 @@ def api_request_op(op,
     if this.token != None:
         headers = {"authorization": this.token}
 
-    r = getattr(requests, op)(url, params, headers=headers)
+    r = getattr(requests, op)(url, params, headers=headers, files=files)
     api_log_full(r)
 
     if try_login_if_need and r.status_code == 401 and login_fn != None:
         this.token = None
         token = login_fn(context)
         this.token = token
-        return api_request_op(op, context, url_path_segment, False, params)
+        return api_request_op(op, context, url_path_segment, False, params, files=files)
     else:
         return r
 
