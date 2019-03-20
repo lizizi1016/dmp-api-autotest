@@ -718,7 +718,7 @@ def step_imp(context):
 
 
 @then(u'SLA protocol of the MySQL group should be binded')
-def step_imp(context, ):
+def step_imp(context):
     assert context.mysql_instance != None
     res = api_get(context, "database/list_group", {
         "number": context.page_size_to_select_all,
@@ -1898,8 +1898,8 @@ def step_impl(context):
     assert match is not None
     for temp in match:
         if temp['uguard-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] and \
-                temp['urman-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] or \
-                temp['uguard-mgr_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]:
+            temp['urman-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] or \
+            temp['uguard-mgr_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]:
             return
         else:
             assert False
