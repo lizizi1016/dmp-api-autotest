@@ -243,7 +243,7 @@ def step_impl(context, comp, duration):
             server_id, comp)
         match = pyjq.first(condition, resp)
         if match != None and (match in [
-            "STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"
+                "STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"
         ]):
             return
         time.sleep(0.1)
