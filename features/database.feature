@@ -305,6 +305,174 @@ Feature: database
 	When I kill 1 times slave mysql instance pid
 	And I start uguard-agent on the slave's server
 	Then the slave mysql instance should running in 20m
+  
+  Scenario: MySQL-022-add MongoDB group should succeed
+    When I found a valid port, or I skip the test
+    And I add MongoDB group
+    Then the response is ok
+    And the MongoDB group list should contains the MongoDB group
+
+  Scenario: MySQL-023-add MongoDB instance should succeed
+    When I found a server with components ustats,udeploy,uguard-agent,urman-agent, or I skip the test
+    And I found a MongoDB group without MongoDB instance, or I skip the test
+    When I add MongoDB instance
+    Then the response is ok
+    And the MongoDB instance should add succeed in 1m
+
+    When I found a server with components ustats,udeploy,uguard-agent,urman-agent, or I skip the test
+    When I add MongoDB instance
+    Then the response is ok
+    And the MongoDB group should have 1 running MongoDB master and 1 running MongoDB slave in 1m
+
+  Scenario: MySQL-024-stop and start MongoDB instance should succeed
+    When I found a running MongoDB instance slave, or I skip the test
+    And I action stop the MongoDB instance
+    Then the response is ok
+    And the MongoDB instance should stopped in 2m
+
+    When I action start the MongoDB instance
+    Then the response is ok
+    And the MongoDB instance should started in 2m
+
+  Scenario: MySQL-025-remove MongoDB instance should succeed
+    When I found a running MongoDB instance slave, or I skip the test
+    And I remove MongoDB instance
+    Then the response is ok
+    And the MongoDB instance list should not contains the MongoDB instance in 2m
+
+
+
+  Scenario Outline: MySQL-026--update MySQL configuration with host connect should succeed
+	  When I found a running MySQL instance, or I skip the test
+	  And I update MySQL configuration with host connect "<option>" to "<option_value>"
+	  Then the response is ok
+	  When I wait for updating MySQL configuration finish in 1m
+	  And I query the MySQL instance "show global variables like '<option>'"
+	  Then the MySQL response should be
+    	| Variable_name      | Value  |
+    	| <option>  | <option_value>    |
+
+	Examples:
+		| option | option_value |
+		| slave_net_timeout | 999 |
+		| slave_net_timeout | 998 |
+		| slave_net_timeout | 997 |
+
+  Scenario: MySQL-027-components status when disable HA master-slave instance
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I action stop role STATUS_MYSQL_SLAVE on HA instance
+    Then the response is ok
+    And the server uguard should running
+    When I action stop role STATUS_MYSQL_MASTER on HA instance
+    Then the response is ok
+    And the server uguard should running
+
+
+  Scenario:  MySQL-028-takeover MySQL and view data consistent or remove instance
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I detach MySQL instance
+    Then the response is ok
+
+    Then the MySQL instance should be not exist
+    When I takeover MySQL instance
+    Then the response is ok
+    And the MySQL instance should be listed
+
+    When I enable the MySQL instance HA
+    Then the response is ok
+    And MySQL instance HA status should be running in 1m
+
+    When I create and insert table in master instance "use mysql;create table test5(id int auto_increment not null primary key ,uname char(8));"
+    Then the response is ok
+    When I query the slave instance "select table_name from information_schema.tables where table_name="test5";"
+    Then the MySQL response should be
+      | table_name |
+      | test5   |
+    When I create and insert table in master instance "use mysql;DROP TABLE test5;"
+    And I stop MySQL instance ha enable
+    Then the response is ok
+    And MySQL instance ha enable should stopped in 1m
+
+    When I remove MySQL instance
+    Then the response is ok
+    And the MySQL instance list should not contains the MySQL instance
+
+
+  Scenario: MySQL-029-uguard-mgr restart
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I add the ip to sip pool
+
+    When I found a valid SIP, or I skip the test
+    And I configure MySQL group SIP
+    Then the response is ok
+    And update MySQL group SIP successful in 1m
+
+    When I action stop component uguard-mgr in server
+    Then the response is ok
+    And component uguard-mgr should stopped in 1m
+
+    When I action start component uguard-mgr
+    Then the response is ok
+    And component uguard-mgr should started in 1m
+
+    When I execute the MySQL group "use mysql;create table test10(id int auto_increment not null primary key ,uname char(8));" with sip
+    And I query the MySQL group "select table_name from information_schema.tables where table_name="test10";}" with sip
+    Then the MySQL response should be
+      | table_name |
+      | test10   |
+
+    When I execute the MySQL group "use mysql;DROP TABLE test10;" with sip
+
+  Scenario: MySQL-030-no alarm when enable SLA and disable SLA or HA
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I found alert code "RESTART_REPLICATION", or I skip the test
+    And I found alert code "EXCLUDE_INSTANCE_SUCCESS", or I skip the test
+    And I add SLA protocol "SLA_RPO_sample"
+    Then the response is ok
+    And SLA protocol "SLA_RPO_sample" should add succeed in 1m
+
+    When I start the group SLA protocol
+    Then the response is ok
+    And the group SLA protocol should started
+
+    When I promote slave instance to master
+    Then the response is ok
+    And promote slave instance to master should succeed in 1m
+    And alert code RESTART_REPLICATION should not exist in 1m
+
+    When I action stop role STATUS_MYSQL_SLAVE on HA instance
+    Then the response is ok
+    And alert code EXCLUDE_INSTANCE_SUCCESS should not exist in 1m
+
+    When I action stop role STATUS_MYSQL_MASTER on HA instance
+    Then the response is ok
+    And alert code EXCLUDE_INSTANCE_SUCCESS should not exist in 1m
+
+#    When I pause the group SLA protocol
+#    Then the response is ok
+#    And the group SLA protocol should paused in 1m
+#
+#    When I start the group SLA protocol
+#    Then the response is ok
+#    And the group SLA protocol should started
+
+    When I action start role STATUS_MYSQL_MASTER on HA instance
+    Then the response is ok
+    And alert code RESTART_REPLICATION should not exist in 1m
+
+    When I action start role STATUS_MYSQL_SLAVE on HA instance
+    Then the response is ok
+    And alert code RESTART_REPLICATION should not exist in 1m
+
+    When I isolate the MySQL instance
+    Then the response is ok
+    And alert code mysql_slave_sql_thread_down should contains in 1m
+    And alert code mysql_slave_io_thread_down should contains in 1m
+	
+	
+  Scenario: MySQL-031-demo
+    When I batch takeover the MySQL instance
+
 
 	When I execute the sql: "create table mysql.testSIP(id int auto_increment not null primary key ,uname char(8));", with group sip
 	When I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="testSIP";"
@@ -312,7 +480,7 @@ Feature: database
 	  | table_name |
 	  | testSIP    |
   
-  Scenario Outline: MySQL-022-Highly Available policy add RTO/RPO template
+  Scenario Outline: MySQL-032-Highly Available policy add RTO/RPO template
 	When I add a <type> template
 	Then the response is ok
 	And the Highly Available policy list should contains the <type> template
@@ -322,7 +490,7 @@ Feature: database
 	  | rto  |
 	  | rpo  |
   
-  Scenario Outline: MySQL-023-Highly Available policy update RTO/RPO template configuration
+  Scenario Outline: MySQL-033-Highly Available policy update RTO/RPO template configuration
 	When I found a valid <type> template, or I skip the test
 	And I update the <type> template configuration, <config>
 	Then the response is ok
@@ -334,7 +502,7 @@ Feature: database
 	  | rpo  | sla_rpo: 1, sla_rpo_levels: 10,40,500, sla_rpo_error_levels: 20,50,500 |
   
   
-  Scenario Outline: MySQL-024-Highly Available policy remove RTO/RPO template
+  Scenario Outline: MySQL-034-Highly Available policy remove RTO/RPO template
 	When I found a valid <type> template, or I skip the test
 	And I remove the <type> template
 	Then the response is ok
