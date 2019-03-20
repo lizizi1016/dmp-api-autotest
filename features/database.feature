@@ -310,7 +310,7 @@ Feature: database
 	When I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="testSIP";"
 	Then the MySQL response should be
 	  | table_name |
-	  | test10     |
+	  | testSIP    |
   
   Scenario Outline: MySQL-022-Highly Available policy add RTO/RPO template
 	When I add a <type> template
