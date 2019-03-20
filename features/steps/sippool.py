@@ -91,7 +91,6 @@ def step_impl(context):
         context.scenario.skip("Found no MySQL instance without backup rule")
         return
     context.valid_sip = match["sip"]
-    print(context.valid_sip)
 
 
 @then(u'the sip pool should contain the added IP')
