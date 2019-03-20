@@ -321,7 +321,6 @@ Feature: database
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I detach MySQL instance
     Then the response is ok
-    
     Then the MySQL instance should be not exist
     When I takeover MySQL instance
     Then the response is ok
