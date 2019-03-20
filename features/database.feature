@@ -306,8 +306,8 @@ Feature: database
 	And I start uguard-agent on the slave's server
 	Then the slave mysql instance should running in 20m
 
-	When I execute the sql: "create table mysql.test10(id int auto_increment not null primary key ,uname char(8));", with group sip
-	When I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="test10";"
+	When I execute the sql: "create table mysql.testSIP(id int auto_increment not null primary key ,uname char(8));", with group sip
+	When I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="testSIP";"
 	Then the MySQL response should be
 	  | table_name |
 	  | test10     |
