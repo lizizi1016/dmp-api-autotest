@@ -447,8 +447,8 @@ def step_imp(context, duration):
         match = pyjq.first(
             '.data[] | select(."mysql_id" == "{0}")'.format(mysql_id), resp)
         if match is not None and match[
-            'uguard_status'] == "UGUARD_ENABLE" and match[
-                'replication_status'] == "STATUS_MYSQL_REPL_OK":
+                'uguard_status'] == "UGUARD_ENABLE" and match[
+                    'replication_status'] == "STATUS_MYSQL_REPL_OK":
             return True
 
     waitfor(context, condition, duration)
@@ -966,7 +966,7 @@ def step_imp(context):
         "mysql_password": passwd,
         "mysql_connect_type": "socket",
         "mysql_socket_path":
-         context.mysql_instance['mysql_data_path'] + "/mysqld.sock",
+        context.mysql_instance['mysql_data_path'] + "/mysqld.sock",
         "backup_path": context.mysql_instance['backup_path'],
         "mycnf_path": context.mysql_instance['mycnf_path'],
         "version": context.mysql_instance['version'],
