@@ -2100,7 +2100,7 @@ def step_impl(context, count, with_without):
     if with_without == 'without':
         condition = '.data[] | select(.group_instance_num == "{0}") | select(has("sip") | not)'.format(count)
     elif with_without == 'with':
-        condition = '.data[] | select(.group_instance_num == "{0}") | select(has("sip")'.format(count)
+        condition = '.data[] | select(.group_instance_num == "{0}") | select(has("sip"))'.format(count)
 
     match = pyjq.all(condition, resp)
 
