@@ -807,6 +807,7 @@ def step_imp(context, count, master_slave):
 
 @then(u"master-slave switching in {duration:time}")
 def step_imp(context, duration):
+
     def condition(context, flag):
         resp = api_get(context, "database/list_instance", {
             "group_id": context.mysql_group[0]["group_id"],
@@ -838,8 +839,8 @@ def step_imp(context, code):
 
 @then(u'expect alert code {code:string} in {duration:time}')
 def step_imp(context, code, duration):
-    def condition(context, flag):
 
+    def condition(context, flag):
         resp = api_get(context, "/alert_record/list_search", {
             'order_by': 'timestamp',
             'ascending': 'false',
@@ -1091,6 +1092,7 @@ def step_imp(context):
 @then(
     u'expect alert code {code:string} and detail "{detail}" in {duration:time}')
 def step_imp(context, code, detail, duration):
+
     def condition(context, flag):
         resp = api_get(context, "/alert_record/list_search", {
             'order_by': 'timestamp',
