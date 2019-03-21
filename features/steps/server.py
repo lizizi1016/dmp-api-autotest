@@ -282,7 +282,7 @@ def step_impl(context, status, comps):
         context.scenario.skip(
             "Found no server with {0} components {1}".format(status, comps))
     else:
-        context.servers_id = match
+        context.server_ids = match
 
 
 @when(u'I pause {comps:strings+} on the {server_id:strings}')
@@ -299,8 +299,8 @@ def step_impl(context, comps, server_id):
 
 @when(u'I pause {comps:strings+} on all these servers')
 def step_impl(context, comps):
-    assert context.servers_id != None
-    for server_id in context.servers_id:
+    assert context.server_ids != None
+    for server_id in context.server_ids:
         context.execute_steps(u"""
     			When I pause {components} on the {server_id}
     			Then the response is ok
@@ -345,8 +345,8 @@ def step_impl(context, comps, server_id):
 
 @when(u'I start {comps:strings+} on all these servers')
 def step_impl(context, comps):
-    assert context.servers_id != None
-    for server_id in context.servers_id:
+    assert context.server_ids != None
+    for server_id in context.server_ids:
         context.execute_steps(u"""
     			When I start {components} on the {server_id}
     			Then the response is ok
@@ -384,7 +384,7 @@ def step_impl(context, comps, master_slave):
             When I found servers with stopped {components}, or I skip the test
             Then the response is ok
            	""".format(components=",".join(comps)))
-    context.servers_id.remove(context.mysql_instance['server_id'])
+    context.server_ids.remove(context.mysql_instance['server_id'])
     context.execute_steps(u"""
         When I start {components} on all these servers
         Then the response is ok
