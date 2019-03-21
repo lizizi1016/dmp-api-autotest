@@ -24,7 +24,7 @@ def step_impl(context):
     })
     mysql = pyjq.first(
         '.data[] | select(.mysql_status == "STATUS_MYSQL_HEALTH_OK" and .group_id == "{0}" )'
-            .format(match['group_id']), mysqls)
+        .format(match['group_id']), mysqls)
     if mysql is None:
         context.scenario.skip("Found no MySQL instance without backup rule")
         return
@@ -211,7 +211,7 @@ def step_impl(context):
         "all_host": "%",
         "all_password": "bupYE@-00",
         "all_privilege":
-            "lock tables, process, reload, replication client, super, usage on *.*\nreplication slave, replication client on *.*\nshow databases, show view, update, super, create temporary tables, trigger, create view, alter routine, create routine, execute, file, create tablespace, create user, create, drop, grant option, lock tables, references, event, alter, delete, index, insert, select, usage on *.*\ncreate,select,insert,update,delete on universe.*\nselect on universe.*\nsuper on *.*\nsuper on *.*\nprocess on *.*\nreload on *.*\nreplication client on *.*\nsuper on *.*\nselect on performance_schema.*\nselect on mysql.*\nselect, execute on sys.*\nprocess on *.*\nevent on *.*\n",
+        "lock tables, process, reload, replication client, super, usage on *.*\nreplication slave, replication client on *.*\nshow databases, show view, update, super, create temporary tables, trigger, create view, alter routine, create routine, execute, file, create tablespace, create user, create, drop, grant option, lock tables, references, event, alter, delete, index, insert, select, usage on *.*\ncreate,select,insert,update,delete on universe.*\nselect on universe.*\nsuper on *.*\nsuper on *.*\nprocess on *.*\nreload on *.*\nreplication client on *.*\nsuper on *.*\nselect on performance_schema.*\nselect on mysql.*\nselect, execute on sys.*\nprocess on *.*\nevent on *.*\n",
         "run_user": "actiontech-mysql",
         "run_user_group": "",
         "mysql_uid": "",
@@ -448,7 +448,7 @@ def step_imp(context, duration):
             '.data[] | select(."mysql_id" == "{0}")'.format(mysql_id), resp)
         if match is not None and match[
             'uguard_status'] == "UGUARD_ENABLE" and match[
-            'replication_status'] == "STATUS_MYSQL_REPL_OK":
+                'replication_status'] == "STATUS_MYSQL_REPL_OK":
             return True
 
     waitfor(context, condition, duration)
@@ -528,7 +528,7 @@ def step_impl(context):
     })
     mysql = pyjq.first(
         '.data[] | select(.mysql_status == "STATUS_MYSQL_HEALTH_OK" and .uguard_status == "UGUARD_ENABLE" and .group_id == "{0}" )'
-            .format(match['group_id']), mysqls)
+        .format(match['group_id']), mysqls)
     if mysql is None:
         context.scenario.skip("Found no MySQL instance UGUARD_ENABLE")
         return
@@ -815,7 +815,7 @@ def step_imp(context, duration):
             '.data[]|select(."role" == "STATUS_MYSQL_MASTER" and ."replication_status" == "STATUS_MYSQL_REPL_OK" and ."sip" == "(SIP)")',
             resp)
         if master is not None and master['mysql_id'] != context.master_info[
-            'mysql_id']:
+                'mysql_id']:
             return True
 
     waitfor(context, condition, duration)
@@ -847,7 +847,7 @@ def step_imp(context, code, duration):
         alert_info = pyjq.first('.data[]|select(."code" == {0})'.format(code),
                                 resp)
         if alert_info is not None and context.master_info[
-            'server_id'] == alert_info['server']:
+                'server_id'] == alert_info['server']:
             return True
 
     waitfor(context, condition, duration)
@@ -966,7 +966,7 @@ def step_imp(context):
         "mysql_password": passwd,
         "mysql_connect_type": "socket",
         "mysql_socket_path":
-            context.mysql_instance['mysql_data_path'] + "/mysqld.sock",
+         context.mysql_instance['mysql_data_path'] + "/mysqld.sock",
         "backup_path": context.mysql_instance['backup_path'],
         "mycnf_path": context.mysql_instance['mycnf_path'],
         "version": context.mysql_instance['version'],
@@ -1007,7 +1007,7 @@ def step_imp(context):
     })
     match = pyjq.first(
         '.data[] | select(.group_instance_num == "2" and ."group_id" == "{0}")'.
-            format(context.mysql_instance["group_id"]), res)
+        format(context.mysql_instance["group_id"]), res)
     if match is not None:
         resp = api_get(context, "database/list_instance", {
             "group_id": context.mysql_instance["group_id"],
@@ -1343,27 +1343,27 @@ def step_imp(context):
     base_dir = context.component_installation_dir
     body = {
         "server_id":
-            context.server['server_id'],
+        context.server['server_id'],
         "group_id":
-            context.mongodb_group['group_id'],
+        context.mongodb_group['group_id'],
         "mongodb_id":
-            "mongodb-" + generate_id(),
+        "mongodb-" + generate_id(),
         "mongodb_alias":
-            "mongodb-" + generate_id(),
+        "mongodb-" + generate_id(),
         "mongodb_tarball_path":
-            install_file,
+        install_file,
         "mongodb_base_path":
-            base_dir + "mongodb/base/" + context.mongodb_group['port'],
+        base_dir + "mongodb/base/" + context.mongodb_group['port'],
         "mongodb_data_path":
-            base_dir + "mongodb/data/" + context.mongodb_group['port'],
+        base_dir + "mongodb/data/" + context.mongodb_group['port'],
         "mongodb_config_path":
-            base_dir + "mongodb/etc/" + context.mongodb_group['port'] + "/config",
+        base_dir + "mongodb/etc/" + context.mongodb_group['port'] + "/config",
         "mongodb_backup_path":
-            base_dir + "mongodb/backup/" + context.mongodb_group['port'],
+        base_dir + "mongodb/backup/" + context.mongodb_group['port'],
         "mongodb_run_user":
-            "actiontech-mongodb",
+        "actiontech-mongodb",
         "is_sync":
-            "true",
+        "true",
     }
     api_request_post(context, "/mongodb/add_instance", body)
 
@@ -1467,7 +1467,7 @@ def step_imp(context, status, duration):
             })
             match = pyjq.first(
                 '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_BAD" and ."mongodb_id" == "{0}")'
-                    .format(context.mongodb_info['mongodb_id']), resp)
+                .format(context.mongodb_info['mongodb_id']), resp)
             if match is not None:
                 return True
 
@@ -1480,7 +1480,7 @@ def step_imp(context, status, duration):
             })
             match = pyjq.first(
                 '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_OK" and ."mongodb_id" == "{0}")'
-                    .format(context.mongodb_info['mongodb_id']), resp)
+                .format(context.mongodb_info['mongodb_id']), resp)
             if match is not None:
                 return True
 
@@ -1508,7 +1508,7 @@ def step_impl(context, duration):
         })
         match = pyjq.first(
             '.[] | select(.mongodb_id == "{0}")'.format(
-                context.mongodb_info['mongodb_id']), resp)
+            context.mongodb_info['mongodb_id']), resp)
         if match is None:
             return True
 
@@ -1894,8 +1894,8 @@ def step_impl(context):
     assert match is not None
     for temp in match:
         if temp['uguard-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] and \
-                temp['urman-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] or \
-                temp['uguard-mgr_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]:
+            temp['urman-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] or \
+            temp['uguard-mgr_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]:
             return
         else:
             assert False
@@ -1947,7 +1947,7 @@ def step_imp(context, component, duration):
         })
         match = pyjq.first(
             '.data[] |  select(."{0}" == "STATUS_STOPPED(master)" and ."server_id" == "{1}")'
-                .format(com_status, context.server['server_id']), resp)
+            .format(com_status, context.server['server_id']), resp)
         if match is not None:
             return True
 
@@ -1965,7 +1965,7 @@ def step_imp(context, component, duration):
         })
         match = pyjq.first(
             '.data[] |  select(."{0}" == "STATUS_OK" or ."{0}" == "STATUS_OK(master)" and ."server_id" == "{1}")'
-                .format(com_status, context.server['server_id']), resp)
+            .format(com_status, context.server['server_id']), resp)
         if match is not None:
             return True
 
