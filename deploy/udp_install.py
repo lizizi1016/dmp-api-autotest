@@ -17,8 +17,7 @@ class umcHander:
     def headers():
         return {
             "authorization":
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NTMyNDM2NTQsIm5iZiI6MTU1MzE1NzI1NCwic2VlZCI6ImdaQ0J4RFJxUm1DQzJpaG4iLCJ1c2VyIjoiYWRtaW4ifQ.qWvFGKF__XnusMw08LXffGStWBIXDSBmDZSaNArhWvk
-"
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1NTMyNDM2NTQsIm5iZiI6MTU1MzE1NzI1NCwic2VlZCI6ImdaQ0J4RFJxUm1DQzJpaG4iLCJ1c2VyIjoiYWRtaW4ifQ.qWvFGKF__XnusMw08LXffGStWBIXDSBmDZSaNArhWvk"
         }
 
     def full_url(self, short_url):
