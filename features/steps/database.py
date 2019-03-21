@@ -24,7 +24,7 @@ def step_impl(context):
     })
     mysql = pyjq.first(
         '.data[] | select(.mysql_status == "STATUS_MYSQL_HEALTH_OK" and .group_id == "{0}" )'
-        .format(match['group_id']), mysqls)
+            .format(match['group_id']), mysqls)
     if mysql is None:
         context.scenario.skip("Found no MySQL instance without backup rule")
         return
@@ -211,7 +211,7 @@ def step_impl(context):
         "all_host": "%",
         "all_password": "bupYE@-00",
         "all_privilege":
-        "lock tables, process, reload, replication client, super, usage on *.*\nreplication slave, replication client on *.*\nshow databases, show view, update, super, create temporary tables, trigger, create view, alter routine, create routine, execute, file, create tablespace, create user, create, drop, grant option, lock tables, references, event, alter, delete, index, insert, select, usage on *.*\ncreate,select,insert,update,delete on universe.*\nselect on universe.*\nsuper on *.*\nsuper on *.*\nprocess on *.*\nreload on *.*\nreplication client on *.*\nsuper on *.*\nselect on performance_schema.*\nselect on mysql.*\nselect, execute on sys.*\nprocess on *.*\nevent on *.*\n",
+            "lock tables, process, reload, replication client, super, usage on *.*\nreplication slave, replication client on *.*\nshow databases, show view, update, super, create temporary tables, trigger, create view, alter routine, create routine, execute, file, create tablespace, create user, create, drop, grant option, lock tables, references, event, alter, delete, index, insert, select, usage on *.*\ncreate,select,insert,update,delete on universe.*\nselect on universe.*\nsuper on *.*\nsuper on *.*\nprocess on *.*\nreload on *.*\nreplication client on *.*\nsuper on *.*\nselect on performance_schema.*\nselect on mysql.*\nselect, execute on sys.*\nprocess on *.*\nevent on *.*\n",
         "run_user": "actiontech-mysql",
         "run_user_group": "",
         "mysql_uid": "",
@@ -447,8 +447,8 @@ def step_imp(context, duration):
         match = pyjq.first(
             '.data[] | select(."mysql_id" == "{0}")'.format(mysql_id), resp)
         if match is not None and match[
-                'uguard_status'] == "UGUARD_ENABLE" and match[
-                    'replication_status'] == "STATUS_MYSQL_REPL_OK":
+            'uguard_status'] == "UGUARD_ENABLE" and match[
+            'replication_status'] == "STATUS_MYSQL_REPL_OK":
             return True
 
     waitfor(context, condition, duration)
@@ -528,7 +528,7 @@ def step_impl(context):
     })
     mysql = pyjq.first(
         '.data[] | select(.mysql_status == "STATUS_MYSQL_HEALTH_OK" and .uguard_status == "UGUARD_ENABLE" and .group_id == "{0}" )'
-        .format(match['group_id']), mysqls)
+            .format(match['group_id']), mysqls)
     if mysql is None:
         context.scenario.skip("Found no MySQL instance UGUARD_ENABLE")
         return
@@ -803,12 +803,10 @@ def step_imp(context, count, master_slave):
             "mysql_id": context.mysql_instance['mysql_id'],
             "is_sync": "true",
         })
-        time.sleep(5)
 
 
 @then(u"master-slave switching in {duration:time}")
 def step_imp(context, duration):
-
     def condition(context, flag):
         resp = api_get(context, "database/list_instance", {
             "group_id": context.mysql_group[0]["group_id"],
@@ -817,7 +815,7 @@ def step_imp(context, duration):
             '.data[]|select(."role" == "STATUS_MYSQL_MASTER" and ."replication_status" == "STATUS_MYSQL_REPL_OK" and ."sip" == "(SIP)")',
             resp)
         if master is not None and master['mysql_id'] != context.master_info[
-                'mysql_id']:
+            'mysql_id']:
             return True
 
     waitfor(context, condition, duration)
@@ -840,7 +838,6 @@ def step_imp(context, code):
 
 @then(u'expect alert code {code:string} in {duration:time}')
 def step_imp(context, code, duration):
-
     def condition(context, flag):
         resp = api_get(context, "/alert_record/list_search", {
             'order_by': 'timestamp',
@@ -850,7 +847,7 @@ def step_imp(context, code, duration):
         alert_info = pyjq.first('.data[]|select(."code" == {0})'.format(code),
                                 resp)
         if alert_info is not None and context.master_info[
-                'server_id'] == alert_info['server']:
+            'server_id'] == alert_info['server']:
             return True
 
     waitfor(context, condition, duration)
@@ -969,7 +966,7 @@ def step_imp(context):
         "mysql_password": passwd,
         "mysql_connect_type": "socket",
         "mysql_socket_path":
-        context.mysql_instance['mysql_data_path'] + "/mysqld.sock",
+            context.mysql_instance['mysql_data_path'] + "/mysqld.sock",
         "backup_path": context.mysql_instance['backup_path'],
         "mycnf_path": context.mysql_instance['mycnf_path'],
         "version": context.mysql_instance['version'],
@@ -1010,7 +1007,7 @@ def step_imp(context):
     })
     match = pyjq.first(
         '.data[] | select(.group_instance_num == "2" and ."group_id" == "{0}")'.
-        format(context.mysql_instance["group_id"]), res)
+            format(context.mysql_instance["group_id"]), res)
     if match is not None:
         resp = api_get(context, "database/list_instance", {
             "group_id": context.mysql_instance["group_id"],
@@ -1093,7 +1090,6 @@ def step_imp(context):
 @then(
     u'expect alert code {code:string} and detail "{detail}" in {duration:time}')
 def step_imp(context, code, detail, duration):
-
     def condition(context, flag):
         resp = api_get(context, "/alert_record/list_search", {
             'order_by': 'timestamp',
@@ -1183,16 +1179,15 @@ def step_imp(context, duration):
 
 @when(u'I add the ip to sip pool')
 def step_imp(context):
-    sips = []
+    context.sips = []
     for i in range(1, 9):
-        sips.append(eval('context.group_sip_' + str(i)))
+        context.sips.append(eval('context.group_sip_' + str(i)))
 
-    for sip in sips:
+    for sip in context.sips:
         api_request_post(context, "sippool/add", {
             "sip": sip,
             "is_sync": True,
         })
-    context.sips = sips
 
 
 @when(u'I action {action:string} MySQL instance component {component:string}')
@@ -1348,27 +1343,27 @@ def step_imp(context):
     base_dir = context.component_installation_dir
     body = {
         "server_id":
-        context.server['server_id'],
+            context.server['server_id'],
         "group_id":
-        context.mongodb_group['group_id'],
+            context.mongodb_group['group_id'],
         "mongodb_id":
-        "mongodb-" + generate_id(),
+            "mongodb-" + generate_id(),
         "mongodb_alias":
-        "mongodb-" + generate_id(),
+            "mongodb-" + generate_id(),
         "mongodb_tarball_path":
-        install_file,
+            install_file,
         "mongodb_base_path":
-        base_dir + "mongodb/base/" + context.mongodb_group['port'],
+            base_dir + "mongodb/base/" + context.mongodb_group['port'],
         "mongodb_data_path":
-        base_dir + "mongodb/data/" + context.mongodb_group['port'],
+            base_dir + "mongodb/data/" + context.mongodb_group['port'],
         "mongodb_config_path":
-        base_dir + "mongodb/etc/" + context.mongodb_group['port'] + "/config",
+            base_dir + "mongodb/etc/" + context.mongodb_group['port'] + "/config",
         "mongodb_backup_path":
-        base_dir + "mongodb/backup/" + context.mongodb_group['port'],
+            base_dir + "mongodb/backup/" + context.mongodb_group['port'],
         "mongodb_run_user":
-        "actiontech-mongodb",
+            "actiontech-mongodb",
         "is_sync":
-        "true",
+            "true",
     }
     api_request_post(context, "/mongodb/add_instance", body)
 
@@ -1472,7 +1467,7 @@ def step_imp(context, status, duration):
             })
             match = pyjq.first(
                 '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_BAD" and ."mongodb_id" == "{0}")'
-                .format(context.mongodb_info['mongodb_id']), resp)
+                    .format(context.mongodb_info['mongodb_id']), resp)
             if match is not None:
                 return True
 
@@ -1485,7 +1480,7 @@ def step_imp(context, status, duration):
             })
             match = pyjq.first(
                 '.[] | select(."mongodb_status" == "STATUS_MONGODB_HEALTH_OK" and ."mongodb_id" == "{0}")'
-                .format(context.mongodb_info['mongodb_id']), resp)
+                    .format(context.mongodb_info['mongodb_id']), resp)
             if match is not None:
                 return True
 
@@ -1899,8 +1894,8 @@ def step_impl(context):
     assert match is not None
     for temp in match:
         if temp['uguard-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] and \
-            temp['urman-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] or \
-            temp['uguard-mgr_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]:
+                temp['urman-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] or \
+                temp['uguard-mgr_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]:
             return
         else:
             assert False
@@ -1952,7 +1947,7 @@ def step_imp(context, component, duration):
         })
         match = pyjq.first(
             '.data[] |  select(."{0}" == "STATUS_STOPPED(master)" and ."server_id" == "{1}")'
-            .format(com_status, context.server['server_id']), resp)
+                .format(com_status, context.server['server_id']), resp)
         if match is not None:
             return True
 
@@ -1970,7 +1965,7 @@ def step_imp(context, component, duration):
         })
         match = pyjq.first(
             '.data[] |  select(."{0}" == "STATUS_OK" or ."{0}" == "STATUS_OK(master)" and ."server_id" == "{1}")'
-            .format(com_status, context.server['server_id']), resp)
+                .format(com_status, context.server['server_id']), resp)
         if match is not None:
             return True
 
@@ -2044,9 +2039,9 @@ def step_imp(context):
 
     assert match is not None and 'sla_template' not in match
 
+
 @then(u'alert code {code:string} should not exist in {duration:time}')
 def step_imp(context, code, duration):
-
     def condition(context, flag):
         resp = api_get(context, "/alert_record/list_search", {
             'order_by': 'timestamp',
@@ -2080,7 +2075,6 @@ def step_imp(context):
 
 @then(u'alert code {code:string} should contains in {duration:time}')
 def step_imp(context, code, duration):
-
     def condition(context, flag):
         resp = api_get(context, "/alert_record/list_search", {
             'order_by': 'timestamp',
@@ -2117,17 +2111,7 @@ def step_impl(context, count, with_without):
         context.mysql_group = match
 
 
-@when(u'I execute the sql: "{query:any}", with group sip')
-def step_impl(context, query):
-    assert context.mysql_group != None
-    group = context.mysql_group[0]
-    api_get(context, "helper/mysql/query_by_sip", {
-        "mysql_group_id": group["group_id"],
-        "sql": query,
-    })
-
-
-@when(u'I found a server of the mysql group\'s {master_slave:string} instance')
+@when(u'I found a server of the MySQL group\'s {master_slave:string} instance')
 def step_imp(context, master_slave):
     find_group_server(context, master_slave)
 
@@ -2148,15 +2132,19 @@ def find_group_server(context, master_slave):
 
 
 @then(
-    u'the slave mysql instance should running in {duration:time}'
+    u'the slave mysql instance should {status:string} in {duration:time}'
 )
-def step_impl(context, duration):
+def step_impl(context, status, duration):
     assert context.mysql_instance != None
 
     def wait_mysql_running(context, flag):
         resp = api_get(context, "database/list_instance")
-        condition = '.data[] | select(."mysql_id"=="{0}")  | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."replication_status" == "STATUS_MYSQL_REPL_OK")'.format(
-            context.mysql_instance["mysql_id"])
+        if status == 'running':
+            condition = '.data[] | select(."mysql_id"=="{0}")  | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."replication_status" == "STATUS_MYSQL_REPL_OK")'.format(
+                context.mysql_instance["mysql_id"])
+        elif status == 'stopped':
+            condition = '.data[] | select(."mysql_id"=="{0}")  | select(."mysql_status" == "STATUS_MYSQL_HEALTH_BAD" and ."replication_status" == "STATUS_UNKNOWN")'.format(
+                context.mysql_instance["mysql_id"])
         match = pyjq.first(condition, resp)
         if match != None:
             return True
@@ -2166,13 +2154,12 @@ def step_impl(context, duration):
 
 @when(u'I batch takeover the MySQL instance')
 def step_imp(context):
-
     csv_content = """数据库组名（必填）,数据库别名（非必填）,服务器ID（必填）,服务器IP（必填）,数据库角色（必填）,复制类型（必填）,数据库端口（必填）,只读实例（非必填）,数据库版本（必填）,安装包（必填）,ROOT密码（必填）,操作用户（必填）,操作用户密码（必填）,配置文件模板（必填）,配置文件目录（必填）,备份目录（必填）,安装目录（必填）,data目录（必填）,binlog目录（必填）,relaylog目录（必填）,redoLog目录（必填）,tmp目录（必填）,启用高可用（必填）,禁用高可用决策（必填）,启动SLA（必填）,SLA模板（非必填）,SIP（非必填）,高可用切换优先级（非必填，默认100）,运行用户（非必填）,运行用户组（非必填）,UID（非必填）,GID（非必填）,UMASK（非必填）,UMASK_DIR（非必填）,SOCKET文件路径（非必填）,组标签_应用英文名（非必填）,组标签_应用名（非必填）,组标签_数据库用途（非必填）,组标签_应用节点描述（非必填）,组标签_应用等级（非必填）,组标签_灾备等级（非必填）,组标签_域名改造（非必填）,开启slave数据补偿（必填）,实例标签_应用tag（非必填）,实例标签_用途tag（非必填）,实例标签_英文简称（非必填）,实例标签_应用节点描述（非必填）,实例标签_用途（非必填）,实例标签_高可用方式（非必填）,实例标签_域名改造（非必填）,实例标签_操作系统（非必填）,实例标签_物理虚拟（非必填）,实例标签_创建时间（非必填）,实例标签_上线时间（非必填）,实例标签_备注（非必填）,实例标签_备份周期（非必填）,实例标签_备份窗口（非必填）,实例标签_全备时间日期（非必填）,实例标签_全备时间星期（非必填）,MYAWR_RUN（ON/OFF）,MYAWR_SERVER_IP,MYAWR_SERVER_MYSQL_PORT,MYAWR_TIVOLI_PROBE_SERVER,MYAWR_TIVOLI_PROBE_PORT,MYAWR_TIVOLI_APP_NAME,MYAWR_TIVOLI_APP_SHORTNAME,MYAWR_TIVOLI_BUSINESS_NAME,MYAWR_TIVOLI_ORG_NAME
 batch_group_1,1,server-1,192.168.1.1,master,uguard_semi_sync,3306,,5.7.21,mysql-5.7.21-linux-glibc2.12-x86_64.tar.gz,action,universe_op,universe_pass,my.cnf.5.7,/opt/mysql/etc/3306/my.cnf,/opt/mysql/backup/3306,/opt/mysql/base/5.7.21,/opt/mysql/data/3306,/opt/mysql/log/binlog/3306,/opt/mysql/log/relaylog/3306,/opt/mysql/log/redolog/3306,/opt/mysql/tmp/3306,TRUE,FALSE,TRUE,SLA_RPO_sample,192.168.1.100,90,mysql,mysql,3306,3306,,,/opt/mysql/data/3306/mysqld.sock,应用英文名,应用名,数据库用途,应用节点描述,应用等级,灾备等级,域名改造,FALSE,应用tag,用途tag,英文简称,应用节点描述,用途,高可用方式,域名改造,操作系统,物理虚拟,创建时间,上线时间,备注,0 0 1 ? *,,0 0 23 1/1 * ?,,on,,,,,,,,
 """
 
     resp = api_post(context, "database/batch_install_instances", {
         "task_limit": 30,
-    }, files = {
+    }, files={
         "csv": ('batch_install_mysql.csv', csv_content)
     })
