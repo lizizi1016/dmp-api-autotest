@@ -1182,10 +1182,7 @@ def step_imp(context, duration):
 
 @when(u'I add the ip to sip pool')
 def step_imp(context):
-    context.sips = []
-    for i in range(1, 9):
-        context.sips.append(eval('context.group_sip_' + str(i)))
-
+    assert context.sips != None
     for sip in context.sips:
         api_request_post(context, "sippool/add", {
             "sip": sip,
