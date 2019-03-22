@@ -19,3 +19,6 @@ def before_all(context):
     context.group_sip_6 = context.settings['group_sip_6']
     context.group_sip_7 = context.settings['group_sip_7']
     context.group_sip_8 = context.settings['group_sip_8']
+    context.sips = []
+    for i in range(1, 9):
+        context.sips.append(eval('context.group_sip_' + str(i)))
