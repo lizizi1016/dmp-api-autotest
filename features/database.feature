@@ -301,7 +301,7 @@ Feature: database
 	Then the MySQL response should be
 	  | Variable_name | Value          |
 	  | <option>      | <option_value> |
-      
+   
 	Examples:
 	  | option            | option_value |
 	  | slave_net_timeout | 999          |
@@ -457,7 +457,7 @@ Feature: database
   
   
   Scenario: MySQL-034-insert data through group SIP successfully
-    When I found servers with running uguard-agent, or I skip the test
+	When I found servers with running uguard-agent, or I skip the test
 	And I pause uguard-agent on all these servers
 	
 	When I found a MySQL group with 2 MySQL instance, and without SIP, or I skip the test
@@ -473,11 +473,11 @@ Feature: database
 	And I start uguard-agent except the slave's server
 	When I kill 1 times slave mysql instance pid
 	Then the slave mysql instance should stopped in 20m
-	And I start uguard-agent on the slave's server
+	When I start uguard-agent on the slave's server
 	Then the slave mysql instance should running in 20m
 	
-	When I execute the MySQL group "create table mysql.testSIP(id int auto_increment not null primary key ,uname char(8));" with sip
-	And query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="testSIP";"
+	When I execute the MySQL group "create table mysql.test_group_sip(id int auto_increment not null primary key ,uname char(8));" with sip
+	And I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="test_group_sip";"
 	Then the MySQL response should be
-	  | table_name |
-	  | testSIP    |
+	  | table_name     |
+	  | test_group_sip |
