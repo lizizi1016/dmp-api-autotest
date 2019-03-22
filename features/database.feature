@@ -456,7 +456,7 @@ Feature: database
       | rpo  |
   
   
-  Scenario: MySQL-034-insert data through group SIP successfully
+  Scenario: MySQL-034-insert data through group SIP,with the slave's mysql down
 	When I found servers with running uguard-agent, or I skip the test
 	And I pause uguard-agent on all these servers
 	
