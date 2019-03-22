@@ -481,3 +481,33 @@ Feature: database
 	Then the MySQL response should be
 	  | table_name     |
 	  | test_group_sip |
+    
+   
+  Scenario: MySQL-035-insert data through group SIP
+	When I found servers with running uguard-agent, or I skip the test
+	And I pause uguard-agent on all these servers
+	
+	When I found a MySQL group with 2 MySQL instance, and without SIP, or I skip the test
+	And  I add the ip to sip pool
+	Then the sip pool should contain the added IP
+	
+	When I found a valid SIP, or I skip the test
+	And I configure MySQL group SIP
+	Then the response is ok
+	And update MySQL group SIP successful in 1m
+	
+	When I found a server of the MySQL group's slave instance
+	And I start uguard-agent except the slave's server
+	When I execute the MySQL group "create table mysql.test_group_sip_1(id int auto_increment not null primary key ,uname char(8));" with sip
+	And I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="test_group_sip_1";"
+	Then the MySQL response should be
+	  | table_name       |
+	  | test_group_sip_1 |
+	When I start uguard-agent on the slave's server
+	Then the slave mysql instance should running in 20m
+	
+	When I execute the MySQL group "create table mysql.test_group_sip_2(id int auto_increment not null primary key ,uname char(8));" with sip
+	And I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="test_group_sip_2";"
+	Then the MySQL response should be
+	  | table_name       |
+	  | test_group_sip_2 |
