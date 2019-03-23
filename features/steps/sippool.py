@@ -93,6 +93,15 @@ def step_impl(context):
     context.valid_sip = match["sip"]
 
 
+@then(u'the sip pool should contain the added IP')
+def step_impl(context):
+    assert context.sips != None
+    exist_ips = get_sippool_all_ips(context)
+
+    for expect_ip in context.sips:
+        assert expect_ip in exist_ips
+
+
 def get_sippool_all_ips(context):
     resp = api_get(context, "sippool/list", {
         "number": context.page_size_to_select_all,

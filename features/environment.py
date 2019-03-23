@@ -13,3 +13,12 @@ def before_all(context):
     context.mysql_installation_dir = context.settings["mysql_installation_dir"]
     context.group_sip_1 = context.settings['group_sip_1']
     context.group_sip_2 = context.settings['group_sip_2']
+    context.group_sip_3 = context.settings['group_sip_3']
+    context.group_sip_4 = context.settings['group_sip_4']
+    context.group_sip_5 = context.settings['group_sip_5']
+    context.group_sip_6 = context.settings['group_sip_6']
+    context.group_sip_7 = context.settings['group_sip_7']
+    context.group_sip_8 = context.settings['group_sip_8']
+    context.sips = []
+    for i in range(1, 9):
+        context.sips.append(eval('context.group_sip_' + str(i)))

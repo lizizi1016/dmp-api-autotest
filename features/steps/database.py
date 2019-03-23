@@ -52,6 +52,20 @@ def step_impl(context, query):
     context.mysql_resp = resp
 
 
+@when(u'I query on the slave instance, with the sql: "{query:any}"')
+def step_impl(context, query):
+    assert context.mysql_instance != None
+    password = get_master_root_password(context)
+    resp = api_get(
+        context, "helper/query_mysql", {
+            "mysql_id": context.mysql_instance["mysql_id"],
+            "query": query,
+            "user": "root",
+            "password": password,
+        })
+    context.mysql_resp = resp
+
+
 @then(u'the MySQL response should be')
 def step_impl(context):
     assert context.mysql_resp != None
@@ -704,7 +718,7 @@ def step_imp(context):
 
 
 @then(u'SLA protocol of the MySQL group should be binded')
-def step_imp(context,):
+def step_imp(context):
     assert context.mysql_instance != None
     res = api_get(context, "database/list_group", {
         "number": context.page_size_to_select_all,
@@ -779,6 +793,16 @@ def step_imp(context):
 
     context.master_info = master
     context.start_time = time.time()
+
+
+@when(u'I kill {count:int} times {master_slave:string} mysql instance pid')
+def step_imp(context, count, master_slave):
+    assert context.mysql_instance != None
+    for i in range(0, count):
+        api_request_post(context, "/helper/kill_mysql_process", {
+            "mysql_id": context.mysql_instance['mysql_id'],
+            "is_sync": "true",
+        })
 
 
 @then(u"master-slave switching in {duration:time}")
@@ -1067,7 +1091,7 @@ def step_imp(context):
 
 @then(
     u'expect alert code {code:string} and detail "{detail}" in {duration:time}')
-def step_imp(context, code, detail, duration):
+def step_imp(context,   code, detail, duration):
 
     def condition(context, flag):
         resp = api_get(context, "/alert_record/list_search", {
@@ -1158,11 +1182,12 @@ def step_imp(context, duration):
 
 @when(u'I add the ip to sip pool')
 def step_imp(context):
-    sip = context.group_sip_1
-    api_request_post(context, "sippool/add", {
-        "sip": sip,
-        "is_sync": True,
-    })
+    assert context.sips != None
+    for sip in context.sips:
+        api_request_post(context, "sippool/add", {
+            "sip": sip,
+            "is_sync": True,
+        })
 
 
 @when(u'I action {action:string} MySQL instance component {component:string}')
@@ -1419,8 +1444,6 @@ def step_imp(context, role):
 @when(u'I action {action:string} the MongoDB instance')
 def step_imp(context, action):
     assert context.mongodb_info != None
-    print("test_oupt")
-    print(context.mongodb_info)
     if action.lower() == "stop":
         api_request_post(context, "/mongodb/stop_instance", {
             "mongodb_id": context.mongodb_info['mongodb_id'],
@@ -1970,8 +1993,6 @@ def step_impl(context, query):
         "mysql_group_id": group["group_id"],
         "sql": query,
     })
-    print('testout')
-    print(group['sip'])
 
 
 @when(u'I pause SLA protocol')
@@ -2018,6 +2039,7 @@ def step_imp(context):
 
     assert match is not None and 'sla_template' not in match
 
+
 @then(u'alert code {code:string} should not exist in {duration:time}')
 def step_imp(context, code, duration):
 
@@ -2054,7 +2076,6 @@ def step_imp(context):
 
 @then(u'alert code {code:string} should contains in {duration:time}')
 def step_imp(context, code, duration):
-
     def condition(context, flag):
         resp = api_get(context, "/alert_record/list_search", {
             'order_by': 'timestamp',
@@ -2068,9 +2089,72 @@ def step_imp(context, code, duration):
     waitfor(context, condition, duration)
 
 
+@when(
+    u'I found a MySQL group with {count:int} MySQL instance, and {with_without:string} SIP, or I skip the test'
+)
+def step_impl(context, count, with_without):
+    resp = api_get(context, "database/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+
+    condition = None
+    if with_without == 'without':
+        condition = '.data[] | select(.group_instance_num == "{0}") | select(has("sip") | not)'.format(count)
+    elif with_without == 'with':
+        condition = '.data[] | select(.group_instance_num == "{0}") | select(has("sip"))'.format(count)
+
+    match = pyjq.all(condition, resp)
+
+    if match is None:
+        context.scenario.skip(
+            "Found no MySQL group with {0} MySQL instance, and without SIP".format(count))
+    else:
+        context.mysql_group = match
+
+
+@when(u'I found a server of the MySQL group\'s {master_slave:string} instance')
+def step_imp(context, master_slave):
+    find_group_server(context, master_slave)
+
+
+def find_group_server(context, master_slave):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
+    })
+    condition = None
+    if master_slave == 'master':
+        condition = pyjq.first('.data[]|select(."role" == "STATUS_MYSQL_MASTER")',
+                               resp)
+    elif master_slave == 'slave':
+        condition = pyjq.first('.data[]|select(."role" == "STATUS_MYSQL_SLAVE")',
+                               resp)
+    context.mysql_instance = condition
+
+
+@then(
+    u'the slave mysql instance should {status:string} in {duration:time}'
+)
+def step_impl(context, status, duration):
+    assert context.mysql_instance != None
+
+    def wait_mysql_running(context, flag):
+        resp = api_get(context, "database/list_instance")
+        if status == 'running':
+            condition = '.data[] | select(."mysql_id"=="{0}")  | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."replication_status" == "STATUS_MYSQL_REPL_OK")'.format(
+                context.mysql_instance["mysql_id"])
+        elif status == 'stopped':
+            condition = '.data[] | select(."mysql_id"=="{0}")  | select(."mysql_status" == "STATUS_MYSQL_HEALTH_BAD" and ."replication_status" == "STATUS_UNKNOWN")'.format(
+                context.mysql_instance["mysql_id"])
+        match = pyjq.first(condition, resp)
+        if match != None:
+            return True
+
+    waitfor(context, wait_mysql_running, duration)
+
+
 @when(u'I batch takeover the MySQL instance')
 def step_imp(context):
-    
     csv_content = """数据库组名（必填）,数据库别名（非必填）,服务器ID（必填）,服务器IP（必填）,数据库角色（必填）,复制类型（必填）,数据库端口（必填）,只读实例（非必填）,数据库版本（必填）,安装包（必填）,ROOT密码（必填）,操作用户（必填）,操作用户密码（必填）,配置文件模板（必填）,配置文件目录（必填）,备份目录（必填）,安装目录（必填）,data目录（必填）,binlog目录（必填）,relaylog目录（必填）,redoLog目录（必填）,tmp目录（必填）,启用高可用（必填）,禁用高可用决策（必填）,启动SLA（必填）,SLA模板（非必填）,SIP（非必填）,高可用切换优先级（非必填，默认100）,运行用户（非必填）,运行用户组（非必填）,UID（非必填）,GID（非必填）,UMASK（非必填）,UMASK_DIR（非必填）,SOCKET文件路径（非必填）,组标签_应用英文名（非必填）,组标签_应用名（非必填）,组标签_数据库用途（非必填）,组标签_应用节点描述（非必填）,组标签_应用等级（非必填）,组标签_灾备等级（非必填）,组标签_域名改造（非必填）,开启slave数据补偿（必填）,实例标签_应用tag（非必填）,实例标签_用途tag（非必填）,实例标签_英文简称（非必填）,实例标签_应用节点描述（非必填）,实例标签_用途（非必填）,实例标签_高可用方式（非必填）,实例标签_域名改造（非必填）,实例标签_操作系统（非必填）,实例标签_物理虚拟（非必填）,实例标签_创建时间（非必填）,实例标签_上线时间（非必填）,实例标签_备注（非必填）,实例标签_备份周期（非必填）,实例标签_备份窗口（非必填）,实例标签_全备时间日期（非必填）,实例标签_全备时间星期（非必填）,MYAWR_RUN（ON/OFF）,MYAWR_SERVER_IP,MYAWR_SERVER_MYSQL_PORT,MYAWR_TIVOLI_PROBE_SERVER,MYAWR_TIVOLI_PROBE_PORT,MYAWR_TIVOLI_APP_NAME,MYAWR_TIVOLI_APP_SHORTNAME,MYAWR_TIVOLI_BUSINESS_NAME,MYAWR_TIVOLI_ORG_NAME
 batch_group_1,1,server-1,192.168.1.1,master,uguard_semi_sync,3306,,5.7.21,mysql-5.7.21-linux-glibc2.12-x86_64.tar.gz,action,universe_op,universe_pass,my.cnf.5.7,/opt/mysql/etc/3306/my.cnf,/opt/mysql/backup/3306,/opt/mysql/base/5.7.21,/opt/mysql/data/3306,/opt/mysql/log/binlog/3306,/opt/mysql/log/relaylog/3306,/opt/mysql/log/redolog/3306,/opt/mysql/tmp/3306,TRUE,FALSE,TRUE,SLA_RPO_sample,192.168.1.100,90,mysql,mysql,3306,3306,,,/opt/mysql/data/3306/mysqld.sock,应用英文名,应用名,数据库用途,应用节点描述,应用等级,灾备等级,域名改造,FALSE,应用tag,用途tag,英文简称,应用节点描述,用途,高可用方式,域名改造,操作系统,物理虚拟,创建时间,上线时间,备注,0 0 1 ? *,,0 0 23 1/1 * ?,,on,,,,,,,,
 """

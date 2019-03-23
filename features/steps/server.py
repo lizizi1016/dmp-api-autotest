@@ -3,6 +3,7 @@ from framework.api import *
 import pyjq
 import time
 import random
+from common import *
 
 use_step_matcher("cfparse")
 
@@ -259,3 +260,140 @@ def step_impl(context, s, comps):
 			And the component {component} should run with the pid in pidfile
 			And the component {component} should be running in 11s
 		""".format(component=comp))
+
+
+@when(u'I found servers with {status:string} {comps:strings+}, or I skip the test')
+def step_impl(context, status, comps):
+    component_status = None
+    resp = api_get(context, "server/list", {
+        "number": context.page_size_to_select_all,
+    })
+    if status == 'running':
+        component_status = 'STATUS_OK'
+    elif status == 'stopped':
+        component_status = 'STATUS_STOPPED'
+
+    conditions = map(lambda comp: 'select(."{0}_status"=="{1}")'.format(comp, component_status),
+                     comps)
+    condition = '.data[] | ' + " | ".join(conditions) + "|" + '.server_id'
+
+    match = pyjq.all(condition, resp)
+    if match is None:
+        context.scenario.skip(
+            "Found no server with {0} components {1}".format(status, comps))
+    else:
+        context.server_ids = match
+
+
+@when(u'I pause {comps:strings+} on the {server_id:strings}')
+def step_impl(context, comps, server_id):
+    for comp in comps:
+        template_params = {
+            "server_id": server_id,
+            "component": comp,
+            "is_sync": True
+        }
+        api_request_post(context, "server/pause", template_params)
+    context.server_id = server_id
+
+
+@when(u'I pause {comps:strings+} on all these servers')
+def step_impl(context, comps):
+    assert context.server_ids != None
+    for server_id in context.server_ids:
+        context.execute_steps(u"""
+    			When I pause {components} on the {server_id}
+    			Then the response is ok
+    			Then the {server_id}'s components, {components} should be stopped in 60s
+    		""".format(components=",".join(comps), server_id=server_id))
+
+
+@then(
+    u'the {server_id:strings}\'s component{s:s?}, {comps:strings+} should be {status:strings} in {duration:time}')
+def step_impl(context, server_id, s, comps, status, duration):
+    def component_status(context, flag):
+        resp = api_get(context, "server/list", {
+            "number": context.page_size_to_select_all,
+        })
+        conditions = None
+        if status == 'running':
+            conditions = map(lambda comp: 'select(."{0}_status"=="STATUS_OK")'.format(comp), comps)
+        elif status == 'stopped':
+            conditions = map(lambda comp: 'select(."{0}_status"=="STATUS_STOPPED")'.format(comp), comps)
+
+        condition = '.data[] | select(."server_id"=="{0}") | '.format(server_id) + " | ".join(
+            conditions) + " | " + '.server_id'
+        match = pyjq.first(condition, resp)
+        if match != None:
+            return True
+
+    waitfor(context, component_status, duration)
+    context.server_id = server_id
+
+
+@when(u'I start {comps:strings+} on the {server_id:strings}')
+def step_impl(context, comps, server_id):
+    for comp in comps:
+        template_params = {
+            "server_id": server_id,
+            "component": comp,
+            "is_sync": True
+        }
+        api_request_post(context, "server/start", template_params)
+    context.server_id = server_id
+
+
+@when(u'I start {comps:strings+} on all these servers')
+def step_impl(context, comps):
+    assert context.server_ids != None
+    for server_id in context.server_ids:
+        context.execute_steps(u"""
+    			When I start {components} on the {server_id}
+    			Then the response is ok
+    			Then the {server_id}'s components, {components} should be running in 60s		
+    		""".format(components=",".join(comps), server_id=server_id))
+
+
+@When(u'update configuration metadata, {template_values:option_values}')
+def step_impl(context, template_values):
+    template_params = {
+        "value": template_values['is_running']
+    }
+    api_request_post(context, "helper/metadata/uguard_config/exercise_task/is_running/modify", template_params)
+
+
+@then(
+    u'the alarm records list should contains, {code:string}\'s alarm in {duration:time}')
+def step_impl(context, code, duration):
+    def condition(context, flag):
+        resp = api_get(context, "/alert_record/list_search", {
+            'order_by': 'timestamp',
+            'ascending': 'false',
+        })
+        alert_info = pyjq.first('.data[] | select(."alert_comp_id" == "{0}")'.format(code),
+                                resp)
+        if alert_info != None:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(u'I start {comps:strings+} except the {master_slave:string}\'s server')
+def step_impl(context, comps, master_slave):
+    context.execute_steps(u"""
+            When I found servers with stopped {components}, or I skip the test
+            Then the response is ok
+           	""".format(components=",".join(comps)))
+    context.server_ids.remove(context.mysql_instance['server_id'])
+    context.execute_steps(u"""
+        When I start {components} on all these servers
+        Then the response is ok
+       	""".format(components=",".join(comps)))
+
+
+@when(u'I start {comps:strings+} on the {master_slave:string}\'s server')
+def step_impl(context, comps, master_slave):
+    context.execute_steps(u"""
+           When I start {components} on the {server_id}
+           Then the response is ok
+          	""".format(components=",".join(comps), server_id=context.mysql_instance['server_id']))

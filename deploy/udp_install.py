@@ -51,7 +51,9 @@ class umcHander:
         while True:
             try:
                 res = self.get(progress_url)
-            except Exception:
+            except Exception as e:
+                print(e)
+                exit(1)
                 time.sleep(5)
                 continue
             progress_data = json.loads(res)
