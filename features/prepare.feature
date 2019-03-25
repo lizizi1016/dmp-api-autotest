@@ -8,3 +8,5 @@ Feature: prepare
 
 	Scenario: prepare three MySQL Single instance
 		When I prepare three MySQL Single instance
+	Scenario: prepare one group MySQL 1m2s
+		When I prepare one group MySQL 1m2s
