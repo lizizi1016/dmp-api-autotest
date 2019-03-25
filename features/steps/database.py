@@ -412,7 +412,7 @@ def step_impl(context, master_count, slave_count, duration):
             condition + ' | select(."role" == "STATUS_MYSQL_MASTER")', resp)
         slaves = pyjq.all(
             condition + ' | select(."role" == "STATUS_MYSQL_SLAVE")', resp)
-        if len(masters) == 1 and len(slaves) == 1:
+        if len(masters) == 1 and len(slaves) == slave_count:
             return
         time.sleep(0.1)
     assert False
@@ -1874,7 +1874,7 @@ def step_imp(context, action, role):
                     "server_id": master_info['server_id'],
                     "group_id": master_info['group_id'],
                     "mysql_id": master_info['mysql_id'],
-                    "is_sync": "true",
+                    "is_sync": True,
                 })
         else:
             for slave in slave_info:
@@ -1883,7 +1883,7 @@ def step_imp(context, action, role):
                         "server_id": slave['server_id'],
                         "group_id": slave['group_id'],
                         "mysql_id": slave['mysql_id'],
-                        "is_sync": "true",
+                        "is_sync": True,
                     })
     else:
         if role == "STATUS_MYSQL_MASTER":
@@ -1892,7 +1892,7 @@ def step_imp(context, action, role):
                     "server_id": master_info['server_id'],
                     "group_id": master_info['group_id'],
                     "mysql_id": master_info['mysql_id'],
-                    "is_sync": "true",
+                    "is_sync": True,
                 })
         else:
             for slave in slave_info:
@@ -1901,7 +1901,7 @@ def step_imp(context, action, role):
                         "server_id": slave['server_id'],
                         "group_id": slave['group_id'],
                         "mysql_id": slave['mysql_id'],
-                        "is_sync": "true",
+                        "is_sync": True,
                     })
 
 
@@ -2173,15 +2173,548 @@ def step_impl(context, status, duration):
 
     waitfor(context, wait_mysql_running, duration)
 
-
-@when(u'I batch takeover the MySQL instance')
-def step_imp(context):
-    csv_content = """数据库组名（必填）,数据库别名（非必填）,服务器ID（必填）,服务器IP（必填）,数据库角色（必填）,复制类型（必填）,数据库端口（必填）,只读实例（非必填）,数据库版本（必填）,安装包（必填）,ROOT密码（必填）,操作用户（必填）,操作用户密码（必填）,配置文件模板（必填）,配置文件目录（必填）,备份目录（必填）,安装目录（必填）,data目录（必填）,binlog目录（必填）,relaylog目录（必填）,redoLog目录（必填）,tmp目录（必填）,启用高可用（必填）,禁用高可用决策（必填）,启动SLA（必填）,SLA模板（非必填）,SIP（非必填）,高可用切换优先级（非必填，默认100）,运行用户（非必填）,运行用户组（非必填）,UID（非必填）,GID（非必填）,UMASK（非必填）,UMASK_DIR（非必填）,SOCKET文件路径（非必填）,组标签_应用英文名（非必填）,组标签_应用名（非必填）,组标签_数据库用途（非必填）,组标签_应用节点描述（非必填）,组标签_应用等级（非必填）,组标签_灾备等级（非必填）,组标签_域名改造（非必填）,开启slave数据补偿（必填）,实例标签_应用tag（非必填）,实例标签_用途tag（非必填）,实例标签_英文简称（非必填）,实例标签_应用节点描述（非必填）,实例标签_用途（非必填）,实例标签_高可用方式（非必填）,实例标签_域名改造（非必填）,实例标签_操作系统（非必填）,实例标签_物理虚拟（非必填）,实例标签_创建时间（非必填）,实例标签_上线时间（非必填）,实例标签_备注（非必填）,实例标签_备份周期（非必填）,实例标签_备份窗口（非必填）,实例标签_全备时间日期（非必填）,实例标签_全备时间星期（非必填）,MYAWR_RUN（ON/OFF）,MYAWR_SERVER_IP,MYAWR_SERVER_MYSQL_PORT,MYAWR_TIVOLI_PROBE_SERVER,MYAWR_TIVOLI_PROBE_PORT,MYAWR_TIVOLI_APP_NAME,MYAWR_TIVOLI_APP_SHORTNAME,MYAWR_TIVOLI_BUSINESS_NAME,MYAWR_TIVOLI_ORG_NAME
-batch_group_1,1,server-1,192.168.1.1,master,uguard_semi_sync,3306,,5.7.21,mysql-5.7.21-linux-glibc2.12-x86_64.tar.gz,action,universe_op,universe_pass,my.cnf.5.7,/opt/mysql/etc/3306/my.cnf,/opt/mysql/backup/3306,/opt/mysql/base/5.7.21,/opt/mysql/data/3306,/opt/mysql/log/binlog/3306,/opt/mysql/log/relaylog/3306,/opt/mysql/log/redolog/3306,/opt/mysql/tmp/3306,TRUE,FALSE,TRUE,SLA_RPO_sample,192.168.1.100,90,mysql,mysql,3306,3306,,,/opt/mysql/data/3306/mysqld.sock,应用英文名,应用名,数据库用途,应用节点描述,应用等级,灾备等级,域名改造,FALSE,应用tag,用途tag,英文简称,应用节点描述,用途,高可用方式,域名改造,操作系统,物理虚拟,创建时间,上线时间,备注,0 0 1 ? *,,0 0 23 1/1 * ?,,on,,,,,,,,
-"""
-
-    resp = api_post(context, "database/batch_install_instances", {
-        "task_limit": 30,
-    }, files = {
-        "csv": ('batch_install_mysql.csv', csv_content)
+@when(
+    u'I damage the {role:string} MySQL instance configuration file and kill pid'
+)
+def step_imp(context, role):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
     })
+    if role == "master":
+        mysql_info = pyjq.first(
+            '.data[] | select(.role == "STATUS_MYSQL_MASTER")', resp)
+        assert mysql_info is not None
+        context.mysql_instance = mysql_info
+        context.execute_steps(u"""
+        When I damage the MySQL instance configuration file
+        When I kill the MySQL instance pid                    
+                              """)
+    else:
+        match = pyjq.all('.data[] | select(.role == "STATUS_MYSQL_SLAVE")',
+                         resp)
+        assert match is not None
+        for mysql_info in match:
+            context.mysql_instance = mysql_info
+            context.execute_steps(u"""
+            When I damage the MySQL instance configuration file 
+            When I kill the MySQL instance pid
+                                          """)
+
+
+@when('I damage the MySQL instance configuration file')
+def step_imp(context):
+    assert context.mysql_instance != None
+    api_get(context, "/helpper", {
+        "mysql_id": context.mysql_instance['mysql_id'],
+        "is_sync": True,
+    })
+
+
+@when(u'I kill the MySQL instance pid')
+def step_imp(context):
+    assert context.mysql_instance != None
+    api_request_post(context, "/helper/kill_mysql_process", {
+        "mysql_id": context.mysql_instance['mysql_id'],
+        "is_sync": True,
+    })
+
+
+@then(u'the slave MySQL instance promoted in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_instance != None
+
+    def condition(context, flag):
+        resp = api_get(context, "database/list_instance", {
+            "group_id": context.mysql_instance["group_id"],
+        })
+        condition = '.data[] | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."replication_status" == "STATUS_MYSQL_REPL_OK" and ."sip" == "(SIP)")'
+        master = pyjq.first(
+            condition + ' | select(."role" == "STATUS_MYSQL_MASTER")', resp)
+
+        if master['mysql_id'] != context.mysql_instance['mysql_id']:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(u'I make a manual backup on the master MySQL instance')
+def step_imp(context):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
+    })
+    condition = '.data[] | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."replication_status" == "STATUS_MYSQL_REPL_OK" and ."sip" == "(SIP)")'
+    master = pyjq.first(
+        condition + ' | select(."role" == "STATUS_MYSQL_MASTER")', resp)
+    context.mysql_instance = master
+    context.execute_steps(u"""
+    When I make a manual backup on the MySQL instance                      
+                          """)
+@when(
+    u'I found all server with component{s:s?} {comps:strings+}, or I skip the test'
+)
+def step_impl(context, s, comps):
+    resp = api_get(context, "server/list", {
+        "number": context.page_size_to_select_all,
+    })
+    conditions = map(lambda comp: 'select(has("{0}_status"))'.format(comp),
+                     comps)
+    condition = '.data[] | ' + " | ".join(conditions)
+    servers_ip = pyjq.all(condition, resp)
+
+    match = pyjq.all(condition, resp)
+    if match is None:
+        context.scenario.skip(
+            "Found no server with components {0}".format(comps))
+    else:
+        context.server = match
+
+@when(u'I batch install the MySQL instance')
+def step_imp(context):
+    assert context.server != None
+    server_info = context.server
+    if len(server_info) % 2 == 0:
+        servers = server_info
+    else:
+        server_info.pop()
+        servers = server_info
+    group = 'mysql-group-test'
+    mysql = 'mysql-test-'
+    title = """数据库组名（必填）,数据库别名（非必填）,服务器ID（必填）,服务器IP（必填）,数据库角色（必填）,复制类型（必填）,数据库端口（必填）,只读实例（非必填）,数据库版本（必填）,安装包（必填）,ROOT密码（必填）,操作用户（必填）,操作用户密码（必填）,配置文件模板（必填）,配置文件目录（必填）,备份目录（必填）,安装目录（必填）,data目录（必填）,binlog目录（必填）,relaylog目录（必填）,redoLog目录（必填）,tmp目录（必填）,启用高可用（必填）,禁用高可用决策（必填）,启动SLA（必填）,SLA模板（非必填）,SIP（非必填）,高可用切换优先级（非必填，默认100）,运行用户（非必填）,运行用户组（非必填）,UID（非必填）,GID（非必填）,UMASK（非必填）,UMASK_DIR（非必填）,SOCKET文件路径（非必填）,组标签_应用英文名（非必填）,组标签_应用名（非必填）,组标签_数据库用途（非必填）,组标签_应用节点描述（非必填）,组标签_应用等级（非必填）,组标签_灾备等级（非必填）,组标签_域名改造（非必填）,开启slave数据补偿（必填）,实例标签_应用tag（非必填）,实例标签_用途tag（非必填）,实例标签_英文简称（非必填）,实例标签_应用节点描述（非必填）,实例标签_用途（非必填）,实例标签_高可用方式（非必填）,实例标签_域名改造（非必填）,实例标签_操作系统（非必填）,实例标签_物理虚拟（非必填）,实例标签_创建时间（非必填）,实例标签_上线时间（非必填）,实例标签_备注（非必填）,实例标签_备份周期（非必填）,实例标签_备份窗口（非必填）,实例标签_全备时间日期（非必填）,实例标签_全备时间星期（非必填）,MYAWR_RUN（ON/OFF）,MYAWR_SERVER_IP,MYAWR_SERVER_MYSQL_PORT,MYAWR_TIVOLI_PROBE_SERVER,MYAWR_TIVOLI_PROBE_PORT,MYAWR_TIVOLI_APP_NAME,MYAWR_TIVOLI_APP_SHORTNAME,MYAWR_TIVOLI_BUSINESS_NAME,MYAWR_TIVOLI_ORG_NAME"""
+    i = 1
+    csv_content_server = ""
+    context.batch_group = []
+    for server in servers:
+        server_ip = server['server_ip']
+        server_id = server['server_id']
+        if i % 2 == 0:
+            j = i / 2
+            group_id = "{0}-{1}".format(group, int(j))
+            mysql_alias = "{0}-{1}".format(mysql, int(j))
+            role = 'master'
+            context.batch_group.append(group_id)
+        if i % 2 == 1:
+            j = (i + 1) / 2
+            group_id = "{0}-{1}".format(group, int(j))
+            mysql_alias = "{0}-{1}".format(mysql, int(j))
+            role = 'slave'
+            context.batch_group.append(group_id)
+        csv_content_one = """
+{0},{1},{2},{3},{4},uguard_semi_sync,3306,,5.7.21,mysql-5.7.21-linux-glibc2.12-x86_64.tar.gz,action,universe_op,universe_pass,my.cnf.5.7,/opt/mysql/etc/3306/my.cnf,/opt/mysql/backup/3306,/opt/mysql/base/5.7.21,/opt/mysql/data/3306,/opt/mysql/log/binlog/3306,/opt/mysql/log/relaylog/3306,/opt/mysql/log/redolog/3306,/opt/mysql/tmp/3306,TRUE,FALSE,TRUE,SLA_RPO_sample,,90,mysql,mysql,3306,3306,,,/opt/mysql/data/3306/mysqld.sock,应用英文名,应用名,数据库用途,应用节点描述,应用等级,灾备等级,域名改造,FALSE,应用tag,用途tag,英文简称,应用节点描述,用途,高可用方式,域名改造,操作系统,物理虚拟,创建时间,上线时间,备注,0 0 1 ? *,,0 0 23 1/1 * ?,,on,,,,,,,,""".format(
+            group_id, mysql_alias, server_id, server_ip, role)
+        i = i + 1
+        csv_content_server = csv_content_one + csv_content_server
+    csv_content = title + csv_content_server
+
+    resp = api_post(
+        context,
+        "database/batch_install_instances", {
+            "task_limit": 30,
+        },
+        files={"csv": ('batch_install_mysql.csv', csv_content)})
+    api_request_post(context, "progress/commit", {
+        "is_sync": True,
+        "task_limit": 30,
+        "id": resp['progress_id'],
+    })
+
+
+@then(
+    u'the batch MySQL instance list should contains the MySQL instance in {duration:time}'
+)
+def step_imp(context, duration):
+    assert context.batch_group != None
+    group = []
+    i = 1
+    for group_id in context.batch_group:
+        if i % 2 == 0:
+            group.append(group_id)
+        i = i + 1
+
+    def condition(context, flag):
+        res = api_get(context, "database/list_group", {
+            "number": context.page_size_to_select_all,
+        })
+        for group_id in group:
+            match = pyjq.first(
+                '.data[] | select(."group_id" == "{0}" and ."group_instance_num" == "2" and ."uguard_status" == "UGUARD_PRIMARY_SLAVE_ENABLE")'
+                .format(group_id), res)
+            if match is not None:
+                return True
+
+    waitfor(context, condition, duration)
+
+
+@when(u'I detach the batch MySQL instance')
+def step_imp(context):
+    assert context.mysql_group != None
+    group = context.mysql_group[0]
+
+    resp = api_get(context, "database/list_instance", {
+        "group_id": group['group_id'],
+    })
+    slave_info = pyjq.all('.data[] | select(.role == "STATUS_MYSQL_SLAVE")',
+                          resp)
+    assert slave_info is not None
+    context.slave_list = slave_info
+    for slave in slave_info:
+        context.mysql_instance = slave
+        context.execute_steps(u"""
+                            When I stop MySQL instance ha enable
+                            Then the response is ok
+                            And MySQL instance ha enable should stopped in 1m
+                                              """)
+        api_request_post(
+            context, "database/detach_instance", {
+                "mysql_id": context.mysql_instance['mysql_id'],
+                "server_id": context.mysql_instance['server_id'],
+                "group_id": context.mysql_instance['group_id'],
+                "force": "1",
+                "is_sync": True,
+            })
+
+    master_info = pyjq.first('.data[] | select(.role == "STATUS_MYSQL_MASTER")',
+                             resp)
+    assert master_info is not None
+    context.master = master_info
+    context.mysql_instance = master_info
+    context.password = get_mysql_instance_root_password(context,
+                                                        master_info['mysql_id'])
+    context.execute_steps(u"""
+                            When I stop MySQL instance ha enable
+                            Then the response is ok
+                            And MySQL instance ha enable should stopped in 1m
+                                              """)
+    api_request_post(
+        context, "database/detach_instance", {
+            "mysql_id": context.mysql_instance['mysql_id'],
+            "server_id": context.mysql_instance['server_id'],
+            "group_id": context.mysql_instance['group_id'],
+            "force": "1",
+            "is_sync": True,
+        })
+
+
+@then(u'the MySQL instance list should be not exist the MySQL instance')
+def step_imp(context):
+    assert context.mysql_group != None
+    group = context.mysql_group[0]
+
+    res = api_get(context, "database/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.data[] | select(."group_id" == "{0}" and ."group_instance_num" == "0")'
+        .format(group['group_id']), res)
+    assert match is not None
+
+
+@when(u'I takeover the batch MySQL instance')
+def step_imp(context):
+    assert context.slave_list != None
+    assert context.master != None
+    api_post(context, "database/remove_group", {
+        "is_sync": True,
+        "group_id": context.master['group_id'],
+    })
+    master = context.master
+    root = context.password
+    id = master['group_id'].lstrip()
+    alias = master['mysql_alias']
+    server_id = master['server_id']
+    server_addr = master['server_addr']
+    port = master['port']
+    version = master['version']
+    path = master['mysql_tarball_path']
+    cnf = master['mycnf_path']
+    back = master['backup_path']
+    title = """数据库组名（必填）,数据库别名（非必填）,服务器ID（必填）,服务器IP（必填）,数据库角色（必填）,复制类型（必填）,数据库端口（必填）,只读实例（非必填）,数据库版本（必填）,安装包（必填）,ROOT密码（必填）,操作用户（必填）,操作用户密码（必填）,配置文件目录（必填）,备份目录（必填）,启用高可用（必填）,禁用高可用决策（必填）,启动SLA（必填）,SLA模板（非必填）,SIP（非必填）,运行用户（非必填）,运行用户组（非必填）,UID（非必填）,GID（非必填）,UMASK（非必填）,UMASK_DIR（非必填）,SOCKET文件路径（非必填）,组标签_应用英文名（非必填）,组标签_应用名（非必填）,组标签_数据库用途（非必填）,组标签_应用节点描述（非必填）,组标签_应用等级（非必填）,组标签_灾备等级（非必填）,组标签_域名改造（非必填）,开启slave数据补偿（必填）,实例标签_应用tag（非必填）,实例标签_用途tag（非必填）,实例标签_英文简称（非必填）,实例标签_应用节点描述（非必填）,实例标签_用途（非必填）,实例标签_高可用方式（非必填）,实例标签_域名改造（非必填）,实例标签_操作系统（非必填）,实例标签_物理虚拟（非必填）,实例标签_创建时间（非必填）,实例标签_上线时间（非必填）,实例标签_备注（非必填）,实例标签_备份周期（非必填）,实例标签_备份窗口（非必填）,实例标签_全备时间日期（非必填）,实例标签_全备时间星期（非必填）"""
+    master_info = "\n{0},{1},{2},{3},master,uguard_semi_sync,{4},,{5},{6},{7},universe_op,bupYE@-00,{8},{9},TRUE,FALSE,TRUE,SLA_RPO_sample,,actiontech-mysql,,,,,,,,,,,,,,TRUE,,,,,,,,,,,,,,,,,".format(
+        id, alias, server_id, server_addr, port, version, path, root, cnf, back)
+
+    slave_all = ""
+    for slave in context.slave_list:
+        id = slave['group_id'].lstrip()
+        alias = slave['mysql_alias']
+        server_id = slave['server_id']
+        server_addr = slave['server_addr']
+        port = slave['port']
+        version = slave['version']
+        path = slave['mysql_tarball_path']
+        cnf = slave['mycnf_path']
+        back = slave['backup_path']
+        slave_one = "\n{0},{1},{2},{3},slave,uguard_semi_sync,{4},,{5},{6},{7},universe_op,bupYE@-00,{8},{9},TRUE,FALSE,TRUE,SLA_RPO_sample,,actiontech-mysql,,,,,,,,,,,,,,TRUE,,,,,,,,,,,,,,,,,".\
+            format(id,alias,server_id,server_addr,port,version,path,root,cnf,back)
+        # slave_one= "\nmysql-group-15531466976719,10.20.30.7:23733,server-udp7,10.20.30.7,slave,uguard_semi_sync,23733,,5.7.21,mysql-5.7.21-linux-glibc2.12-x86_64.tar.gz,@123qwerTYUIOP,universe_op," \
+        #            "bupYE@-00,/opt/mysql/etc/23733/my.cnf,/opt/mysql/backup/23733,TRUE,FALSE,TRUE,SLA_RPO_sample,,actiontech-mysql,,,,,,,,,,,,,,TRUE,,,,,,,,,,,,,,,,"
+        slave_all = slave_one + slave_all
+    csv_content = title + master_info +slave_all
+
+    print("test567:")
+    print(csv_content)
+    resp = api_post(
+        context,
+        "database/batch_takeover_instances", {
+            "task_limit": 30,
+        },
+        files={"csv": ('batch_takeover_mysql.csv', csv_content)})
+    api_request_post(context, "progress/commit", {
+        "is_sync": True,
+        "task_limit": 30,
+        "id": resp['progress_id'],
+    })
+
+
+@then(
+    u'takeover the batch MySQL instance list should contains the MySQL instance'
+)
+def step_imp(context):
+    assert context.master != None
+    res = api_get(context, "database/list_group", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first(
+        '.data[] | select(."group_id" == "{0}" and ."uguard_status" == "UGUARD_PRIMARY_SLAVE_ENABLE")'
+        .format(context.master['group_id']), res)
+    assert match is not None
+
+
+@when(u'I found all MySQL instance, or I skip the test')
+def step_imp(context):
+    resp = api_get(context, "database/list_instance", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.all(
+        '.data[] | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK")', resp)
+    if match is None:
+        context.scenario.skip("No valid MySQL instance")
+        return
+    else:
+        context.mysql_instance_list = match
+
+
+@when(u'I trigger diagnosis report')
+def step_imp(context):
+    assert context.mysql_instance != None
+    resp = api_get(context, "diagnosis_list/list", {
+        "number": context.page_size_to_select_all,
+    })
+    origin_id = pyjq.first('.data[]|.Key', resp)
+    context.origin_id = origin_id
+    body = {
+        "server_id": context.mysql_instance['server_id'],
+        "mysql_id": context.mysql_instance['mysql_id'],
+        "group_id": context.mysql_instance['group_id'],
+        "is_sync": True,
+    }
+    api_request_post(context, "database/trigger_diagnosis_report", body)
+
+
+@then(u'the diagnosis list should contains the diagnosis report')
+def step_imp(context):
+    resp = api_get(context, "diagnosis_list/list", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first('.data[]|.Key', resp)
+    assert context.origin_id != match
+
+
+@when(u'I trigger diagnosis score report')
+def step_imp(context):
+    assert context.mysql_instance != None
+    resp = api_get(context, "diagnosis_score/list", {
+        "number": context.page_size_to_select_all,
+    })
+    origin_id = pyjq.first('.data[]|.Key', resp)
+    context.origin_id = origin_id
+    body = {
+        "server_id": context.mysql_instance['server_id'],
+        "mysql_id": context.mysql_instance['mysql_id'],
+        "group_id": context.mysql_instance['group_id'],
+        "is_sync": True,
+    }
+    api_request_post(context, "database/trigger_diagnosis_score_report", body)
+
+
+@then(u'the diagnosis score list should contains the diagnosis score')
+def step_imp(context):
+    resp = api_get(context, "diagnosis_score/list", {
+        "number": context.page_size_to_select_all,
+    })
+    match = pyjq.first('.data[]|.Key', resp)
+    assert context.origin_id != match
+
+
+@when(u'I create and insert table in slave instance "{statement}"')
+def step_imp(context, statement):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]["group_id"],
+    })
+    mysql_master = pyjq.first(
+        '.data[] | select(.role == "STATUS_MYSQL_MASTER")', resp)
+    master_root = get_mysql_instance_root_password(context,
+                                                   mysql_master['mysql_id'])
+    mysql = pyjq.first('.data[] | select(.role == "STATUS_MYSQL_SLAVE")', resp)
+    assert mysql is not None
+    context.mysql_instance = mysql
+    resp = api_get(
+        context, "helper/query_mysql", {
+            "mysql_id": mysql["mysql_id"],
+            "query": statement,
+            "user": "root",
+            "password": master_root,
+        })
+
+
+@then(u'the MySQL instance should be exclude HA in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_instance != None
+
+    def condition(context, flag):
+        resp = api_get(context, "database/list_instance", {
+            "group_id": context.mysql_instance['group_id'],
+        })
+        match = pyjq.first(
+            '.data[] | select(."mysql_id" == "{0}")'.format(
+                context.mysql_instance['mysql_id']), resp)
+        if match['uguard_status'] != "UGUARD_ENABLE":
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(u'I pull the MySQL instance GTID')
+def step_imp(context):
+    assert context.mysql_instance != None
+    body = {
+        "group_id": context.mysql_instance['group_id'],
+        "mysql_id": context.mysql_instance['mysql_id'],
+        "is_sync": True,
+    }
+    api_request_post(context, "database/leveling_gtid", body)
+
+
+@then(u'the MySQL group GTID should be consistent in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_group != None
+
+    def condition(context, flag):
+        resp = api_get(context, "database/list_group_gtid",
+                       {"group_id": context.mysql_group[0]['group_id']})
+        match = pyjq.all('.[]|.GTID', resp)
+        assert len(match) > 1
+        if match[0] == match[1]:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@then(u'the MySQL group GTID should not consistent in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_group != None
+
+    def condition(context, flag):
+        resp = api_get(context, "database/list_group_gtid",
+                       {"group_id": context.mysql_group[0]['group_id']})
+        match = pyjq.all('.[]|.GTID', resp)
+        assert len(match) > 1
+        if match[0] != match[1]:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(u'I enable HA on the MySQL instance with uguard_status not health')
+def step_imp(context):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]['group_id'],
+    })
+    match = pyjq.first('.data[]|select(."uguard_status" != "UGUARD_ENABLE")',
+                       resp)
+    assert match is not None
+    body = {
+        "server_id": match['server_id'],
+        "group_id": match['group_id'],
+        "mysql_id": match['mysql_id'],
+        "is_sync": True,
+    }
+    api_request_post(context, "database/start_mysql_ha_enable", body)
+
+
+@when(u'I update the MySQL instance config readonly {value:int}')
+def step_imp(context, value):
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]['group_id'],
+    })
+    match = pyjq.first('.data[] | select(."role" == "STATUS_MYSQL_SLAVE")',
+                       resp)
+    body = {
+        "server_id": match['server_id'],
+        "mysql_id": match['mysql_id'],
+        "config": "readonly",
+        "value": value,
+        "is_sync": True,
+    }
+    api_request_post(context, "database/edit_mysql_config", body)
+    context.mysql_instance = match
+
+
+@then(u'the MySQL instance config readonly should be {value:int}')
+def step_imp(context, value):
+    assert context.mysql_instance != None
+    assert context.mysql_group != None
+    resp = api_get(context, "database/list_instance", {
+        "group_id": context.mysql_group[0]['group_id'],
+    })
+    match = pyjq.first(
+        '.data[] | select(."mysql_id" == "{0}")'.format(
+            context.mysql_instance['mysql_id']), resp)
+    assert match['readonly'] == "{0}".format(value)
+
+
+@then(u'the MySQL instance status shuld be in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_instance != None
+    assert context.mysql_group != None
+    assert context.master_info != None
+
+    def condition(context, flag):
+        resp = api_get(context, "database/list_instance", {
+            "group_id": context.mysql_group[0]['group_id'],
+        })
+        old_master = pyjq.first(
+            '.data[] | select(."mysql_status" != "STATUS_MYSQL_HEALTH_OK" and ."mysql_id" = "{0}")'
+            .format(context.master_info['mysql_id']), resp)
+        new_master = pyjq.first(
+            '.data[] | select(."role" == "STATUS_MYSQL_MASTER" and ."mysql_id" != "{0}")'
+            .format(context.mysql_instance['mysql_id']), resp)
+        slave = pyjq.first(
+            '.data[] | select(."role" == "STATUS_MYSQL_SLAVE" and ."mysql_id" == "{0}")'
+            .format(context.mysql_instance['mysql_id']), resp)
+        if old_master is not None and new_master is not None and slave is not None:
+            return True
+
+    waitfor(context, condition, duration)
+
+
+@when(u'I reset old master MySQL instance')
+def step_imp(context):
+    assert context.mysql_group != None
+    assert context.master_info != None
+    context.mysql_instance = context.master_info
+    resp = api_get(context, "support/init_data", {
+        "group_id": context.mysql_instance['group_id'],
+    })
+    assert len(resp) > 0
+    init_data = resp[-1]["name"]
+    body = {
+        "server_id": context.mysql_instance['server_id'],
+        "mysql_id": context.mysql_instance['mysql_id'],
+        "origin_data": init_data,
+        "is_sync": True,
+    }
+    api_request_post(context, "database/reset_database_instance", body)
