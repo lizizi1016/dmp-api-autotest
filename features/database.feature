@@ -424,14 +424,6 @@ Feature: database
     Then the response is ok
     And alert code EXCLUDE_INSTANCE_SUCCESS should not exist in 1m
 
-#   When I pause the group SLA protocol
-#   Then the response is ok
-#   And the group SLA protocol should paused in 1m
-#
-#   When I start the group SLA protocol
-#   Then the response is ok
-#   And the group SLA protocol should started
-    
     When I action start role STATUS_MYSQL_MASTER on HA instance
     Then the response is ok
     And alert code RESTART_REPLICATION should not exist in 1m
@@ -444,12 +436,11 @@ Feature: database
     Then the response is ok
     And alert code mysql_slave_sql_thread_down should contains in 1m
     And alert code mysql_slave_io_thread_down should contains in 1m
-  
-  
-  Scenario: MySQL-030-demo
-    When I batch takeover the MySQL instance
-  
-  
+
+#  Scenario: MySQL-030-demo
+#    When I batch takeover the MySQL instance
+
+
   Scenario Outline: MySQL-031-Highly Available policy add RTO/RPO template
     When I add a <type> template
     Then the response is ok
@@ -539,9 +530,80 @@ Feature: database
 	Then the MySQL response should be
 	  | table_name       |
 	  | test_group_sip_2 |
-   
-   
-  Scenario: MySQL-036-restart all uguard-agents, then insert data through the group SIP successfully
+	
+
+  Scenario: MySQL-036-batch install MySQL instances should succeed
+    When I found all server with components uguard-agent,urman-agent,ustats,udeploy, or I skip the test
+    And I batch install the MySQL instance
+    Then the response is ok
+    And the batch MySQL instance list should contains the MySQL instance in 5m
+
+  Scenario: MySQL-037-trigger diagnosis report
+    When I found a running MySQL instance, or I skip the test
+    And I trigger diagnosis report
+    Then the response is ok
+    And the diagnosis list should contains the diagnosis report
+
+  Scenario: MySQL-038-trigger diagnosis score report
+    When I found a running MySQL instance, or I skip the test
+    And I trigger diagnosis score report
+    Then the response is ok
+    And the diagnosis score list should contains the diagnosis score
+
+  Scenario: MySQL-039-pull MySQL instance GTID
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I create and insert table in slave instance "use mysql;create table test03(id int auto_increment not null primary key ,uname char(8));"
+    When I query the slave instance "select table_name from information_schema.tables where table_name="test03";"
+    Then the MySQL response should be
+      | table_name |
+      | test03   |
+    And the MySQL instance should be exclude HA in 1m
+    When I pull the MySQL instance GTID
+    Then the response is ok
+    When I enable the MySQL instance HA
+    Then the response is ok
+    And MySQL instance HA status should be running in 1m
+
+  Scenario: MySQL-040-MySQL group GTID compared
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    Then the MySQL group GTID should be consistent in 1m
+    When I create and insert table in slave instance "use mysql;create table test019(id int auto_increment not null primary key ,uname char(8));"
+    And I query the slave instance "select table_name from information_schema.tables where table_name="test019";"
+    Then the MySQL response should be
+      | table_name |
+      | test019   |
+    And the MySQL instance should be exclude HA in 1m
+    And the MySQL group GTID should not consistent in 1m
+
+    When I action stop role STATUS_MYSQL_MASTER on HA instance
+    Then the response is ok
+
+    When I action start role STATUS_MYSQL_SLAVE on HA instance
+    Then the response is ok
+    When I enable HA on the MySQL instance with uguard_status not health
+    Then the response is ok
+    And the MySQL group GTID should be consistent in 1m
+
+    When I create and insert table in master instance "use mysql;DROP TABLE test019;"
+
+  Scenario: MySQL-041-parameter configuration readonly of master-slave switching in instance information
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I update the MySQL instance config readonly 1
+    Then the response is ok
+    And the MySQL instance config readonly should be 1
+    When I kill three master pid
+    Then the MySQL instance status shuld be in 2m
+
+    When I make a manual backup on the master MySQL instance
+    Then the response is ok
+    When I reset old master MySQL instance
+    Then the response is ok
+    When I enable the MySQL instance HA
+    Then the response is ok
+    And MySQL instance HA status should be running in 1m
+	
+	
+  Scenario: MySQL-042-restart all uguard-agents, then insert data through the group SIP successfully
 	When I found servers with running uguard-agent, or I skip the test
 	And I pause uguard-agent on all these servers
 	And I start uguard-agent on all these servers
@@ -557,3 +619,10 @@ Feature: database
 	Then the MySQL response should be
 	  | table_name             |
 	  | test_group_sip_restart |
+
+
+
+
+
+
+
