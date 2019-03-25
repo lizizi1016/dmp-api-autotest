@@ -2428,7 +2428,7 @@ def step_imp(context):
         # slave_one= "\nmysql-group-15531466976719,10.20.30.7:23733,server-udp7,10.20.30.7,slave,uguard_semi_sync,23733,,5.7.21,mysql-5.7.21-linux-glibc2.12-x86_64.tar.gz,@123qwerTYUIOP,universe_op," \
         #            "bupYE@-00,/opt/mysql/etc/23733/my.cnf,/opt/mysql/backup/23733,TRUE,FALSE,TRUE,SLA_RPO_sample,,actiontech-mysql,,,,,,,,,,,,,,TRUE,,,,,,,,,,,,,,,,"
         slave_all = slave_one + slave_all
-    csv_content = (title.join(master_info)).join(slave_all)
+    csv_content = title + master_info +slave_all
 
     print("test567:")
     print(csv_content)
