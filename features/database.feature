@@ -631,21 +631,22 @@ Feature: database
   Scenario: MySQL-043-uguard-agent restart in master instance
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And  I add the ip to sip pool
-	Then the sip pool should contain the added IP
+    Then the sip pool should contain the added IP
 
-	When I found a valid SIP, or I skip the test
-	And I configure MySQL group SIP
-	Then the response is ok
-	And update MySQL group SIP successful in 1m
+    When I found a valid SIP, or I skip the test
+    And I configure MySQL group SIP
+    Then the response is ok
+    And update MySQL group SIP successful in 1m
 
     When I stop the MySQL instance master component uguard-agent
     And I start the MySQL instance master component uguard-agent
 
     When I execute the MySQL group "create table mysql.test_group_sip04(id int auto_increment not null primary key ,uname char(8));" with sip
-	And I query the MySQL group "select table_name from information_schema.tables where table_name="test_group_sip04";" with sip
-	Then the MySQL response should be
-	  | table_name     |
-	  | test_group_sip04 |
+    And I query the MySQL group "select table_name from information_schema.tables where table_name="test_group_sip04";" with sip
+    Then the MySQL response should be
+      | table_name       |
+      | test_group_sip04 |
+
 
 
 
