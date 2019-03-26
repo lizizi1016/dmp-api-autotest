@@ -15,7 +15,8 @@ function download(){
 }
 
 function init_umc(){
-    export ALL_RPM=`curl "http://10.186.18.20:666?version=${VERSION}&linux=7&release=qa"|grep rpm|awk -F "FTP_ADDR}/" '{print $2}' 2>/dev/null`
+    #export ALL_RPM=`curl "http://10.186.18.20:666?version=${VERSION}&linux=7&release=qa"|grep rpm|awk -F "FTP_ADDR}/" '{print $2}' 2>/dev/null`
+    export ALL_RPM=`cat rpm_packages.cnf 2>/dev/null`
     if [[ $? != 0 ]]; then
        exit 1
     fi
