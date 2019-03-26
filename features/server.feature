@@ -25,7 +25,7 @@ Feature: server
 		| uguard-mgr |
 		| uguard-agent |
 		| umon |
-		| ulogstash |
+		#| ulogstash |
 		#| uelasticsearch |
 		| urman-mgr |
 		| urman-agent |

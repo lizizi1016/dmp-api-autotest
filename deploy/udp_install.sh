@@ -3,6 +3,7 @@
 DIR="$( cd "$( dirname "$0" )" && pwd )"
 cd ${DIR}
 source ${DIR}/env_settings.sh
+
 if [[ $? != 0 ]]; then
     exit 1
 fi

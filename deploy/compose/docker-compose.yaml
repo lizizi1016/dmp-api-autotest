@@ -8,12 +8,12 @@ services:
       quick_net:
         ipv4_address: 10.20.30.1
     ports:
-         - "8722:22"
-         - "8708:5708"
-         - "8709:5709"
-         - "8799:5799"
-         - "8713:5713"
-         - "8715:5715"
+      - "8722:22"
+      - "8708:5708"
+      - "8709:5709"
+      - "8799:5799"
+      - "8713:5713"
+      - "8715:5715"
     extends:
       file: common.yaml
       service: agent
@@ -84,6 +84,126 @@ services:
     networks:
       quick_net:
         ipv4_address: 10.20.30.8
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-9:
+    container_name: udp-9
+    hostname: udp9
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.9
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-10:
+    container_name: udp-10
+    hostname: udp10
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.10
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-11:
+    container_name: udp-11
+    hostname: udp11
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.11
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-12:
+    container_name: udp-12
+    hostname: udp12
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.12
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-13:
+    container_name: udp-13
+    hostname: udp13
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.13
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-14:
+    container_name: udp-14
+    hostname: udp14
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.14
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-15:
+    container_name: udp-15
+    hostname: udp15
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.15
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-16:
+    container_name: udp-16
+    hostname: udp16
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.16
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-17:
+    container_name: udp-17
+    hostname: udp17
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.17
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-18:
+    container_name: udp-18
+    hostname: udp18
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.18
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-19:
+    container_name: udp-19
+    hostname: udp19
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.19
+    extends:
+      file: common.yaml
+      service: agent
+
+  udp-20:
+    container_name: udp-20
+    hostname: udp20
+    networks:
+      quick_net:
+        ipv4_address: 10.20.30.20
     extends:
       file: common.yaml
       service: agent

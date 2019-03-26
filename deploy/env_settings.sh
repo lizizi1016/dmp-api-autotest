@@ -1,6 +1,11 @@
 #!/bin/bash
 # ftp setting
-export FTP_URL="ftp://ftp:ftp@10.186.17.201"
+ping -n 1 10.186.17.201
+if [[ $? == 0 ]]; then
+    export FTP_URL="ftp://ftp:ftp@10.186.17.201"
+else
+    export FTP_URL="ftp://ftp:ftp@10.186.18.20"
+fi
 
 # install setting
 export UDP_HOME=/opt
