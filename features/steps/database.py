@@ -52,8 +52,8 @@ def step_impl(context, query):
     context.mysql_resp = resp
 
 
-@when(u'I query on the slave instance, with the sql: "{query:any}"')
-def step_impl(context, query):
+@when(u'I query on the {master_slave:string} instance, with the sql: "{query:any}"')
+def step_impl(context, master_slave, query):
     assert context.mysql_instance != None
     password = get_master_root_password(context)
     resp = api_get(
@@ -271,6 +271,27 @@ def get_mysql_master_in_group(context, group_id):
     })
     match = pyjq.first('.data[] | select(."role" == "STATUS_MYSQL_MASTER")',
                        resp)
+    return match
+
+
+@when(u'I found a {master_slave:string} MySQL\'s instance in the MySQL group')
+def step_impl(context, master_slave):
+    assert context.mysql_group != None
+    match = get_instance_in_group(context, context.mysql_group[0]["group_id"], master_slave)
+    assert match != None
+    context.mysql_instance = match
+    print(context.mysql_instance['mysql_id'])
+
+
+def get_instance_in_group(context, group_id, master_slave):
+    resp = api_get(context, "database/list_instance", {
+        "group_id": group_id,
+    })
+    match  = None
+    if master_slave == 'master':
+        match = pyjq.first('.data[] | select(."role" == "STATUS_MYSQL_MASTER")',resp)
+    elif master_slave== 'slave':
+        match = pyjq.first('.data[] | select(."role" == "STATUS_MYSQL_SLAVE")', resp)
     return match
 
 

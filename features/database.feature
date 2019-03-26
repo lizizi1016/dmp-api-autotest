@@ -530,6 +530,7 @@ Feature: database
 	Then the MySQL response should be
 	  | table_name       |
 	  | test_group_sip_2 |
+	
 
   Scenario: MySQL-036-batch install MySQL instances should succeed
     When I found all server with components uguard-agent,urman-agent,ustats,udeploy, or I skip the test
@@ -600,6 +601,24 @@ Feature: database
     When I enable the MySQL instance HA
     Then the response is ok
     And MySQL instance HA status should be running in 1m
+	
+	
+  Scenario: MySQL-042-restart all uguard-agents, then insert data through the group SIP successfully
+	When I found servers with running uguard-agent, or I skip the test
+	And I pause uguard-agent on all these servers
+	And I start uguard-agent on all these servers
+	When I found a MySQL group with 2 MySQL instance, and with SIP, or I skip the test
+	And I found a master MySQL's instance in the MySQL group
+	When I execute the MySQL group "create table mysql.test_group_sip_restart(id int auto_increment not null primary key ,uname char(8));" with sip
+	And I query on the master instance, with the sql: "select table_name from information_schema.tables where table_name="test_group_sip_restart";"
+	Then the MySQL response should be
+	  | table_name             |
+	  | test_group_sip_restart |
+	When I found a slave MySQL's instance in the MySQL group
+	And I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="test_group_sip_restart";"
+	Then the MySQL response should be
+	  | table_name             |
+	  | test_group_sip_restart |
 
 
 
