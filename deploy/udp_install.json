@@ -160,4 +160,232 @@
       "ustats_id": "ustats-udp8",
       "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
     }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.9",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp9",
+      "server_id": "server-udp9",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp9",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp9",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.10",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp10",
+      "server_id": "server-udp10",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp10",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp10",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.11",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp8",
+      "server_id": "server-udp11",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp11",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp11",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.12",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp12",
+      "server_id": "server-udp12",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp12",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp12",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.13",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp13",
+      "server_id": "server-udp13",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp13",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp13",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.14",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp14",
+      "server_id": "server-udp14",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp14",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp14",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.15",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp15",
+      "server_id": "server-udp15",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp15",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp15",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.16",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp16",
+      "server_id": "server-udp16",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp16",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp16",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.17",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp17",
+      "server_id": "server-udp17",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp17",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp17",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.18",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp18",
+      "server_id": "server-udp18",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp18",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp18",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.19",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp19",
+      "server_id": "server-udp19",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp19",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp19",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
+  },
+  {
+    "url": "v3/server/add",
+    "title": "添加服务器",
+    "json": {
+      "uagent_install_method": "ssh",
+      "server_ip": "10.20.30.20",
+      "ssh_port": "22",
+      "ssh_user": "root",
+      "ssh_password": "sshpass",
+      "hostname": "udp20",
+      "server_id": "server-udp20",
+      "uagent_path": "/opt/uagent",
+      "uagent_id": "uagent-udp20",
+      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
+      "ustats_path": "/opt/ustats",
+      "ustats_id": "ustats-udp20",
+      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
+    }
   }]
