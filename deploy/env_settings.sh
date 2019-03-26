@@ -1,6 +1,6 @@
 #!/bin/bash
 # ftp setting
-ping -n 1 10.186.17.201
+ping -c 1 10.186.17.201
 if [[ $? == 0 ]]; then
     export FTP_URL="ftp://ftp:ftp@10.186.17.201"
 else
