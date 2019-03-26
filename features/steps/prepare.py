@@ -6,12 +6,13 @@ import json
 import re
 from util import *
 from server import *
+
 use_step_matcher("cfparse")
 
 
-@when(u'I prepare four agent environment')
-def step_imp(context):
-    for i in range(1, 5):
+@when(u'I prepare {count:int} agent environment')
+def step_imp(context, count):
+    for i in range(0, count):
         context.execute_steps(u"""
 		When I found a server without components uguard-agent,urman-agent,uguard-mgr, or I skip the test
 	    And I prepare the server for uguard
@@ -21,9 +22,9 @@ def step_imp(context):
 		""")
 
 
-@when(u'I prepare three mgr environment')
-def step_imp(context):
-    for i in range(1, 4):
+@when(u'I prepare {count:int} mgr environment')
+def step_imp(context, count):
+    for i in range(0, count):
         context.execute_steps(u"""
 		When I found a server without components uguard-mgr,urman-mgr,uguard-agent, or I skip the test
 	    And I prepare the server for uguard manager
@@ -33,9 +34,9 @@ def step_imp(context):
 		""")
 
 
-@when(u'I prepare two group MySQL 1m1s')
-def step_imp(context):
-    for i in range(1, 3):
+@when(u'I prepare {count:int} group MySQL 1m1s')
+def step_imp(context, count):
+    for i in range(0, count):
         context.execute_steps(u"""
 		When I add a MySQL group
 	    Then the response is ok
@@ -62,9 +63,9 @@ def step_imp(context):
 		""")
 
 
-@when(u'I prepare three MySQL Single instance')
-def step_imp(context):
-    for i in range(1, 4):
+@when(u'I prepare {count:int} MySQL Single instance')
+def step_imp(context, count):
+    for i in range(0, count):
         context.execute_steps(u"""
 		When I add a MySQL group
 	    Then the response is ok
@@ -78,9 +79,10 @@ def step_imp(context):
 		""")
 
 
-@when('I prepare one group MySQL 1m2s')
-def step_imp(context):
-    context.execute_steps(u"""
+@when('I prepare {count:int} group MySQL 1m2s')
+def step_imp(context, count):
+    for i in range(0, count):
+        context.execute_steps(u"""
         When I add a MySQL group
         Then the response is ok
         And the MySQL group list should contains the MySQL group
