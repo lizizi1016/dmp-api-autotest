@@ -1,7 +1,7 @@
 Feature: prepare
   @wip
   Scenario: prepare DMP environment
-	When I prepare 4 agent environment
+	When I prepare 16 agent environment
 	And I prepare 3 mgr environment
 	And I prepare 2 group MySQL 1m1s
 
