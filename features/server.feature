@@ -19,7 +19,7 @@ Feature: server
 	Examples: install all components
 		| component |
 		| ucore |
-		| uagent |
+		#| uagent |
 		| umc |
 		| udeploy |
 		| uguard-mgr |
@@ -32,11 +32,11 @@ Feature: server
 		| uterm |
 		| usql |
 		| urds |
-		| ustats |
+		#| ustats |
 
 	@test @case.272
 	Scenario: server/prepare_server_env_for_guard should install components
-	  When I found a server without components udeploy,ustats,uguard-agent,urman-agent, or I skip the test
+	  When I found a server without components udeploy,uguard-agent,urman-agent, or I skip the test
 	  And I prepare the server for uguard
 	  Then the response is ok
 	  And the server should has components udeploy,ustats,uguard-agent,urman-agent
