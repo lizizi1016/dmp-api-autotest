@@ -437,8 +437,16 @@ Feature: database
     And alert code mysql_slave_sql_thread_down should contains in 1m
     And alert code mysql_slave_io_thread_down should contains in 1m
 
-#  Scenario: MySQL-030-demo
-#    When I batch takeover the MySQL instance
+
+  Scenario: MySQL-030-batch takeover MySQL instances should succeed
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I detach the batch MySQL instance
+    Then the response is ok
+    And the MySQL instance list should be not exist the MySQL instance
+
+    When I batch takeover the MySQL instance
+    Then the response is ok
+    And batch takeover the MySQL instance list should contains the MySQL instance in 2m
 
 
   Scenario Outline: MySQL-031-Highly Available policy add RTO/RPO template
@@ -587,12 +595,12 @@ Feature: database
     When I create and insert table in master instance "use mysql;DROP TABLE test019;"
 
   Scenario: MySQL-041-parameter configuration readonly of master-slave switching in instance information
-    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    When I found a MySQL group with 3 MySQL instance, and without SIP, or I skip the test
     And I update the MySQL instance config readonly 1
     Then the response is ok
     And the MySQL instance config readonly should be 1
     When I kill three master pid
-    Then the MySQL instance status shuld be in 2m
+    Then the MySQL instance status should be in 2m
 
     When I make a manual backup on the master MySQL instance
     Then the response is ok
@@ -620,8 +628,24 @@ Feature: database
 	  | table_name             |
 	  | test_group_sip_restart |
 
+  Scenario: MySQL-043-uguard-agent restart in master instance
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And  I add the ip to sip pool
+	Then the sip pool should contain the added IP
 
+	When I found a valid SIP, or I skip the test
+	And I configure MySQL group SIP
+	Then the response is ok
+	And update MySQL group SIP successful in 1m
 
+    When I stop the MySQL instance master component uguard-agent
+    And I start the MySQL instance master component uguard-agent
+
+    When I execute the MySQL group "create table mysql.test_group_sip04(id int auto_increment not null primary key ,uname char(8));" with sip
+	And I query the MySQL group "select table_name from information_schema.tables where table_name="test_group_sip04";" with sip
+	Then the MySQL response should be
+	  | table_name     |
+	  | test_group_sip04 |
 
 
 
