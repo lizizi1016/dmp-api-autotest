@@ -2120,9 +2120,9 @@ def step_impl(context, count, with_without):
 
     condition = None
     if with_without == 'without':
-        condition = '.data[] | select(.group_instance_num == "{0}") | select(has("sip") | not)'.format(count)
+        condition = '.data[] | select(.group_instance_num == "{0}" and .uguard_status == "UGUARD_PRIMARY_SLAVE_ENABLE") | select(has("sip") | not)'.format(count)
     elif with_without == 'with':
-        condition = '.data[] | select(.group_instance_num == "{0}") | select(has("sip"))'.format(count)
+        condition = '.data[] | select(.group_instance_num == "{0}" and .uguard_status == "UGUARD_PRIMARY_SLAVE_ENABLE") | select(has("sip"))'.format(count)
 
     match = pyjq.all(condition, resp)
 
@@ -2181,17 +2181,17 @@ def step_imp(context, role):
     resp = api_get(context, "database/list_instance", {
         "group_id": context.mysql_group[0]["group_id"],
     })
+    master_info = pyjq.first(
+            '.data[] | select(."role" == "STATUS_MYSQL_MASTER" and ."sip" == "(SIP)" and ."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."replication_status" == "STATUS_MYSQL_REPL_OK")', resp)
+    assert master_info is not None
     if role == "master":
-        mysql_info = pyjq.first(
-            '.data[] | select(.role == "STATUS_MYSQL_MASTER")', resp)
-        assert mysql_info is not None
-        context.mysql_instance = mysql_info
+        context.mysql_instance = master_info
         context.execute_steps(u"""
         When I damage the MySQL instance configuration file
         When I kill the MySQL instance pid                    
                               """)
-    else:
-        match = pyjq.all('.data[] | select(.role == "STATUS_MYSQL_SLAVE")',
+    if role == "slave":
+        match = pyjq.all('.data[] | select(."mysql_id" != "{0}")'.format(master_info['mysql_id']),
                          resp)
         assert match is not None
         for mysql_info in match:
@@ -2201,12 +2201,11 @@ def step_imp(context, role):
             When I kill the MySQL instance pid
                                           """)
 
-
 @when('I damage the MySQL instance configuration file')
 def step_imp(context):
     assert context.mysql_instance != None
-    api_get(context, "/helpper", {
-        "mysql_id": context.mysql_instance['mysql_id'],
+    api_request_post(context, "helper/mysql/instance/damage_my_cnf", {
+        "mysql_instance_id": context.mysql_instance['mysql_id'],
         "is_sync": True,
     })
 
@@ -2231,10 +2230,8 @@ def step_imp(context, duration):
         condition = '.data[] | select(."mysql_status" == "STATUS_MYSQL_HEALTH_OK" and ."replication_status" == "STATUS_MYSQL_REPL_OK" and ."sip" == "(SIP)")'
         master = pyjq.first(
             condition + ' | select(."role" == "STATUS_MYSQL_MASTER")', resp)
-
-        if master['mysql_id'] != context.mysql_instance['mysql_id']:
+        if master is not None and master['mysql_id'] != context.mysql_instance['mysql_id']:
             return True
-
     waitfor(context, condition, duration)
 
 
@@ -2679,7 +2676,7 @@ def step_imp(context, value):
     assert match['readonly'] == "{0}".format(value)
 
 
-@then(u'the MySQL instance status shuld be in {duration:time}')
+@then(u'the MySQL instance status should be in {duration:time}')
 def step_imp(context, duration):
     assert context.mysql_instance != None
     assert context.mysql_group != None
@@ -2880,3 +2877,19 @@ def step_impl(context, count):
     install_params["tag_list"] = "[]"
 
     api_request_post(context, "database/add_instance", install_params)
+
+@then(u'the MySQL instance should not be health in {duration:time}')
+def step_imp(context, duration):
+    assert context.mysql_instance != None
+
+    def condition(context, flag):
+        resp = api_get(context, "database/list_instance", {
+            "number": context.page_size_to_select_all,
+        })
+        match = pyjq.first(
+            '.data[] | select(.mysql_status != "STATUS_MYSQL_HEALTH_OK")',
+            resp)
+        if match is not None:
+            return True
+
+    waitfor(context, condition, duration)

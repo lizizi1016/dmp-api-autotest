@@ -629,7 +629,7 @@ Feature: database
 	  | test_group_sip_restart |
 
   Scenario: MySQL-043-uguard-agent restart in master instance
-    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    When I found a MySQL group with 2 MySQL instance, and without SIP, or I skip the test
     And  I add the ip to sip pool
     Then the sip pool should contain the added IP
 
@@ -647,7 +647,42 @@ Feature: database
       | table_name       |
       | test_group_sip04 |
 
+  
+  Scenario: MySQL-044-not able choose master when HA Cluster no master
+    When I found a MySQL group with 2 MySQL instance, and without SIP, or I skip the test
+    And I found alert code "NOT_ABLE_CHOOSE_MASTER", or I skip the test
+    When I make a manual backup on the master MySQL instance
+    Then the response is ok
+    When I damage the master MySQL instance configuration file and kill pid
+    Then the response is ok
+    And the slave MySQL instance promoted in 2m
+    When I reset database instance
+    Then the response is ok
+    And reset database instance should succeed in 2m
+    When I enable the MySQL instance HA
+    Then the response is ok
+    And MySQL instance HA status should be running in 1m
 
+    When I damage the slave MySQL instance configuration file and kill pid
+    Then the response is ok
+    And the MySQL instance should not be health in 1m
+    When I damage the master MySQL instance configuration file and kill pid
+    Then the response is ok
+    And the MySQL instance should not be health in 1m
+    And alert code NOT_ABLE_CHOOSE_MASTER should contains in 2m
 
+  Scenario: MySQL-045-master-slave switch when amage master MySQL configuration file and kill pid
+    When I found a MySQL group with 2 MySQL instance, and without SIP, or I skip the test
+    And I make a manual backup on the master MySQL instance
+    Then the response is ok
+    When I damage the master MySQL instance configuration file and kill pid
+    Then the response is ok
+    And the slave MySQL instance promoted in 2m
+    When I reset database instance
+    Then the response is ok
+    And reset database instance should succeed in 2m
+    When I enable the MySQL instance HA
+    Then the response is ok
+    And MySQL instance HA status should be running in 1m
 
 
