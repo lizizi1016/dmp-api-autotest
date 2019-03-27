@@ -40,71 +40,76 @@ class umcHander:
             return
         try:
             res = self.post("user/login",
-                        data={
-                            "user": "admin",
-                            "password": "admin",
-                        })
+                            data={
+                                "user": "admin",
+                                "password": "admin",
+                            })
             token = json.loads(res).get("token")
             self._header["authorization"] = token
             self.logged = True
         except urllib.error.HTTPError as e:
-            print (e.code)
-            print (e.info())
+            print(e.code)
+            print(e.info())
 
     def post_wait_progress(self, short_url, data):
         try:
             if short_url not in INSTALL_URL:
                 self.login()
             res = self.post(short_url, data)
+        except urllib2.URLError as e:
+            print(str(e))
         except Exception as e:
             error_message = e.read()
-            print ("[error]connect to umc failed:" + error_message)
+            print("[error]connect to umc failed:" + error_message)
             return
         j = json.loads(res)
         progress_url = "progress?id={}".format(j["progress_id"])
         step = 0
-        print ("")
-        print ("====================START====================")
+        print("")
+        print("====================START====================")
         while True:
             try:
                 res = self.get(progress_url)
             except Exception as e:
-                print (str(e))
+                print(str(e))
                 error_message = e.read()
                 if error_message == "no user":
                     self.login()
                     continue
                 else:
-                    print ("[error]connect to umc failed:" + error_message)
+                    print("[error]connect to umc failed:" + error_message)
                     return
             progress_data = json.loads(res)
-            done = progress_data.get("doneMsg","").encode('utf-8')
-            err = progress_data.get("err","").encode('utf-8')
+            done = progress_data.get("doneMsg", "").encode('utf-8')
+            err = progress_data.get("err", "").encode('utf-8')
             if "Desc" in progress_data.keys():
-                desc = progress_data.get("Desc","").encode('utf-8')
+                desc = progress_data.get("Desc", "").encode('utf-8')
             else:
-                desc = progress_data.get("desc","").encode('utf-8')
+                desc = progress_data.get("desc", "").encode('utf-8')
             # print total
             if step == 0:
-                print (desc)
+                print(desc)
                 step = step + 1
             # print steps
             steps = progress_data["steps"]
             current_step = progress_data.get("step", 0)
             while step <= current_step and current_step > 0:
-                print (steps[step-1].encode('utf-8'))
+                print(steps[step - 1].encode('utf-8'))
                 step = step + 1
             if done:
-                print (done)
+                print(done)
                 break
             if err:
-                print (err)
+                print(err)
                 exit(1)
             time.sleep(1)
-        print ("=====================END=====================")
+        print("=====================END=====================")
 
     def run_from_json(self, data):
-        self.post_wait_progress(data["url"], data["json"])
+        try:
+            self.post_wait_progress(data["url"], data["json"])
+        except Exception as e:
+            print(str(e))
 
 
 def replace_rpm_version(v, rpm_name):
@@ -121,7 +126,10 @@ if __name__ == "__main__":
     with open(data_json_file) as f:
         data_json = json.loads(f.read())
         if isinstance(data_json, list):
-            for data in data_json:
-                u.run_from_json(data)
+            try:
+                for data in data_json:
+                    u.run_from_json(data)
+            except Exception as e:
+                print(str(e))
         else:
-            print ("data json is invalid")
+            print("data json is invalid")
