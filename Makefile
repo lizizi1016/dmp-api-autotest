@@ -3,7 +3,7 @@ default: prepare test
 prepare:
 	behave features/prepare.feature
 test:
-	behave  features/server.feature
+	behave  features/server.feature features/base_processes.feature features/db_config.feature features/urman.feature features/sippool.feature
 install_deps:
 	pip install -r requirements.txt
 env_dmp:
