@@ -11,5 +11,5 @@ Feature: prepare
   Scenario: prepare one group MySQL 1m2s
     When I prepare 1 group MySQL 1m2s
 
-  Scenario: prepare one group MySQL 1m3s
-    When I prepare 1 group MySQL 1m3s
+#  Scenario: prepare one group MySQL 1m3s
+#    When I prepare 1 group MySQL 1m3s
