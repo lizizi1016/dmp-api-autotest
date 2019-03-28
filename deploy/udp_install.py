@@ -26,6 +26,7 @@ class umcHander:
         return "http://{}:{}/{}".format(self.addr, self.port, short_url)
 
     def post(self, short_url, data):
+        timer = 0
         for i in range(10):
             try:
                 req = urllib2.Request(self.full_url(short_url), data=urllib.urlencode(data), headers=self.get_header())
@@ -37,6 +38,8 @@ class umcHander:
                     exit(1)
                 else:
                     time.sleep(3)
+                    timer += 3
+        print("Post cost : {0}".format(timer))
 
     def get(self, short_url):
         for i in range(10):
