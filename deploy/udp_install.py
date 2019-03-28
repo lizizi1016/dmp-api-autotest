@@ -36,7 +36,7 @@ class umcHander:
                     print("[error]Post info failed: {0}".format(e))
                     exit(1)
                 else:
-                    time.sleep(1)
+                    time.sleep(3)
 
     def get(self, short_url):
         for i in range(10):
@@ -49,7 +49,7 @@ class umcHander:
                     print("[error]Get info failed: {0}".format(e))
                     exit(1)
                 else:
-                    time.sleep(1)
+                    time.sleep(3)
 
     def login(self):
         if self.logged:
