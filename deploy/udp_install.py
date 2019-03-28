@@ -26,14 +26,30 @@ class umcHander:
         return "http://{}:{}/{}".format(self.addr, self.port, short_url)
 
     def post(self, short_url, data):
-        req = urllib2.Request(self.full_url(short_url), data=urllib.urlencode(data), headers=self.get_header())
-        res = urllib2.urlopen(req)
-        return res.read()
+        for i in range(10):
+            try:
+                req = urllib2.Request(self.full_url(short_url), data=urllib.urlencode(data), headers=self.get_header())
+                res = urllib2.urlopen(req)
+                return res.read()
+            except Exception as e:
+                if i >= 9:
+                    print("[error]Post info failed: {0}".format(e))
+                    exit(1)
+                else:
+                    time.sleep(1)
 
     def get(self, short_url):
-        req = urllib2.Request(self.full_url(short_url), headers=self.get_header())
-        res = urllib2.urlopen(req)
-        return res.read()
+        for i in range(10):
+            try:
+                req = urllib2.Request(self.full_url(short_url), headers=self.get_header())
+                res = urllib2.urlopen(req)
+                return res.read()
+            except Exception as e:
+                if i >= 9:
+                    print("[error]Get info failed: {0}".format(e))
+                    exit(1)
+                else:
+                    time.sleep(1)
 
     def login(self):
         if self.logged:
