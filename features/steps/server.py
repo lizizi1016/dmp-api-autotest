@@ -258,7 +258,7 @@ def step_impl(context, s, comps):
         context.execute_steps(u"""
 			Then the component {component} install directory own user should be "actiontech-universe" and own group should be "actiontech"
 			And the component {component} should run with the pid in pidfile
-			And the component {component} should be running in 60s
+			And the component {component} should be running in 120s
 		""".format(component=comp))
 
 
