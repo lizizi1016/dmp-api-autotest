@@ -17,11 +17,11 @@ def step_impl(context):
 
     for mysql_id in mysql_ids:
         resp = api_get(context, "urman_rule/list_backup_rule", {
-            mysql_id: mysql_id,
+            "instance_id": mysql_id,
         })
         if len(resp["data"]) == 0:
             context.mysql_instance = pyjq.first(
-                '.data[] | select(.mysql_id = "{0}")'.format(mysql_id), mysqls)
+                '.data[] | select(.mysql_id == "{0}")'.format(mysql_id), mysqls)
             return
     context.scenario.skip("Found no MySQL instance without backup rule")
 
