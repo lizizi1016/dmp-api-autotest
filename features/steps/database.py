@@ -2116,11 +2116,9 @@ def step_impl(context, count, with_without):
 
     condition = None
     if with_without == 'without':
-        condition = '.data[] | select(.group_instance_num == "{0}" and .uguard_status == "UGUARD_PRIMARY_SLAVE_ENABLE") | select(has("sip") | not)'.format(
-            count)
+        condition = '.data[] | select(.group_instance_num == "{0}" and .uguard_status == "UGUARD_PRIMARY_SLAVE_ENABLE") | select(has("sip") | not)'.format(count)
     elif with_without == 'with':
-        condition = '.data[] | select(.group_instance_num == "{0}" and .uguard_status == "UGUARD_PRIMARY_SLAVE_ENABLE") | select(has("sip"))'.format(
-            count)
+        condition = '.data[] | select(.group_instance_num == "{0}" and .uguard_status == "UGUARD_PRIMARY_SLAVE_ENABLE") | select(has("sip"))'.format(count)
 
     match = pyjq.all(condition, resp)
 
@@ -2447,7 +2445,7 @@ def step_imp(context):
         path = slave['mysql_tarball_path']
         cnf = slave['mycnf_path']
         back = slave['backup_path']
-        slave_one = "\n{0},{1},{2},{3},slave,uguard_semi_sync,{4},,{5},{6},{7},universe_op,bupYE@-00,{8},{9},TRUE,FALSE,TRUE,SLA_RPO_sample,,actiontech-mysql,,,,,,,,,,,,,,TRUE,,,,,,,,,,,,,,,,". \
+        slave_one = "\n{0},{1},{2},{3},slave,uguard_semi_sync,{4},,{5},{6},{7},universe_op,bupYE@-00,{8},{9},TRUE,FALSE,TRUE,SLA_RPO_sample,,actiontech-mysql,,,,,,,,,,,,,,TRUE,,,,,,,,,,,,,,,,".\
             format(id, alias, server_id, server_addr, port, version, path, root, cnf, back)
         slave_all = slave_one + slave_all
     csv_content = title + master_info + slave_all
