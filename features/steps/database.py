@@ -2747,11 +2747,9 @@ def step_imp(context, action, role, component):
     resp = api_get(context, "database/list_instance", {
         "group_id": context.mysql_group[0]['group_id'],
     })
-    master = pyjq.first('.data[] | select(."role" == "STATUS_MYSQL_MASTER")',
-                        resp)
+    master = pyjq.first('.data[] | select(."role" == "STATUS_MYSQL_MASTER")', resp)
     assert master is not None
-    slave = pyjq.first('.data[] | select(."role" == "STATUS_MYSQL_SLAVE")',
-                       resp)
+    slave = pyjq.first('.data[] | select(."role" == "STATUS_MYSQL_SLAVE")', resp)
     assert slave is not None
     res = api_get(context, "server/list", {
         "number": context.page_size_to_select_all,
