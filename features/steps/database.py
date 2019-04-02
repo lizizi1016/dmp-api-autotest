@@ -808,7 +808,7 @@ def step_imp(context):
     for i in range(1, 4):
         api_request_post(context, "/helper/kill_mysql_process", {
             "mysql_id": master['mysql_id'],
-            "is_sync": "true",
+            "is_sync": True
         })
         time.sleep(5)
 
@@ -822,7 +822,7 @@ def step_imp(context, count, master_slave):
     for i in range(0, count):
         api_request_post(context, "/helper/kill_mysql_process", {
             "mysql_id": context.mysql_instance['mysql_id'],
-            "is_sync": "true",
+            "is_sync": True
         })
 
 
@@ -835,8 +835,7 @@ def step_imp(context, duration):
         master = pyjq.first(
             '.data[]|select(."role" == "STATUS_MYSQL_MASTER" and ."replication_status" == "STATUS_MYSQL_REPL_OK" and ."sip" == "(SIP)")',
             resp)
-        if master is not None and master['mysql_id'] != context.master_info[
-            'mysql_id']:
+        if master is not None and master['mysql_id'] != context.master_info['mysql_id']:
             return True
 
     waitfor(context, condition, duration)
@@ -889,7 +888,7 @@ def step_imp(context, user, grants):
             "user_host": "%",
             "password": "@123qwerTYUIOP",
             "grants": grants,
-            "is_sync": "true",
+            "is_sync": True
         })
 
 
@@ -908,7 +907,7 @@ def step_imp(context, user, password):
             "user": user,
             "user_host": "%",
             "update_password": password,
-            "is_sync": "true",
+            "is_sync": True
         })
 
 
@@ -948,7 +947,7 @@ def step_imp(context):
             "server_id": context.mysql_instance['server_id'],
             "group_id": context.mysql_instance['group_id'],
             "force": "1",
-            "is_sync": "true",
+            "is_sync": True
         })
 
 
@@ -1090,7 +1089,7 @@ def step_imp(context):
     assert context.mysql_group != None
     api_request_post(context, "/database/start_sla_protocol", {
         "group_id": context.mysql_group[0]["group_id"],
-        "is_sync": "true",
+        "is_sync": True
     })
 
 
@@ -1148,7 +1147,7 @@ def step_imp(context):
     assert context.mysql_group != None
     body = {
         "group_id": context.mysql_group[0]["group_id"],
-        "is_sync": "true",
+        "is_sync": True
     }
     api_request_post(context, "/database/remove_sla_protocol", body)
 
@@ -1158,7 +1157,7 @@ def step_imp(context):
     assert context.mysql_group != None
     body = {
         "group_id": context.mysql_group[0]["group_id"],
-        "is_sync": "true",
+        "is_sync": True
     }
     api_request_post(context, "/database/pause_sla_protocol", body)
 
@@ -1204,7 +1203,7 @@ def step_imp(context):
     for sip in context.sips:
         api_request_post(context, "sippool/add", {
             "sip": sip,
-            "is_sync": True,
+            "is_sync": True
         })
 
 
@@ -1234,7 +1233,7 @@ def step_imp(context, component):
         context, "/server/pause", {
             "server_id": context.mysql_instance['server_id'],
             "component": component,
-            "is_sync": "true",
+            "is_sync": True
         })
 
 
@@ -1245,7 +1244,7 @@ def step_imp(context, component):
         context, "/server/start", {
             "server_id": context.mysql_instance['server_id'],
             "component": component,
-            "is_sync": "true",
+            "is_sync": True
         })
 
 
@@ -1319,7 +1318,7 @@ def step_imp(context):
         "port": context.valid_port,
         "mongodb_admin_user": "admin",
         "mongodb_admin_password": "QWEasd123",
-        "is_sync": "true",
+        "is_sync": True
     }
     api_request_post(context, "/mongodb/add_group", body)
     context.mongodb_group_id = mongodb_group_id
@@ -1380,8 +1379,7 @@ def step_imp(context):
         base_dir + "mongodb/backup/" + context.mongodb_group['port'],
         "mongodb_run_user":
         "actiontech-mongodb",
-        "is_sync":
-        "true",
+        "is_sync": True
     }
     api_request_post(context, "/mongodb/add_instance", body)
 
@@ -1465,12 +1463,12 @@ def step_imp(context, action):
     if action.lower() == "stop":
         api_request_post(context, "/mongodb/stop_instance", {
             "mongodb_id": context.mongodb_info['mongodb_id'],
-            "is_sync": True,
+            "is_sync": True
         })
     else:
         api_request_post(context, "/mongodb/start_instance", {
             "mongodb_id": context.mongodb_info['mongodb_id'],
-            "is_sync": True,
+            "is_sync": True
         })
 
 
@@ -1510,7 +1508,7 @@ def step_imp(context):
     assert context.mongodb_info != None
     api_request_post(context, "/mongodb/remove_instance", {
         "mongodb_id": context.mongodb_info['mongodb_id'],
-        "is_sync": "true",
+        "is_sync": True
     })
 
 
@@ -1544,7 +1542,7 @@ def step_imp(context):
         "is_autocommit": "1",
         "admin_user": "root",
         "admin_password": "QWEASD123",
-        "is_sync": "true",
+        "is_sync": True
     }
     api_request_post(context, "/uproxy/add_group", body)
     context.group_id = group_id
@@ -1611,7 +1609,7 @@ def step_imp(context):
         "uproxy_path": context.component_installation_dir + "uproxy",
         "uproxy_glibc_install_file": "",
         "uproxy_install_file": install_file,
-        "is_sync": "true",
+        "is_sync": True
     }
     api_request_post(context, "/uproxy/add_instance", body)
     context.uproxy_id = uproxy_id
@@ -1666,7 +1664,7 @@ def step_imp(context):
         "user": "test_uproxy",
         "password": "QWEasd123",
         "is_rws_enable": "true",
-        "is_sync": "true",
+        "is_sync": True
     }
     api_request_post(context, "/uproxy_router/add_router", body)
 
@@ -1729,7 +1727,7 @@ def step_imp(context):
             "user_host": "%",
             "password": "QWEasd123",
             "grants": "all privileges on *.*",
-            "is_sync": "true",
+            "is_sync": True
         })
 
     body = {
@@ -1742,7 +1740,7 @@ def step_imp(context):
         "ports": ports,
         "mbconnlimits": ",",
         "master_slaves": "STATUS_MYSQL_MASTER,STATUS_MYSQL_SLAVE",
-        "is_sync": "true",
+        "is_sync": True
     }
 
     api_request_post(context, "/uproxy_router/add_backend", body)
@@ -1784,7 +1782,7 @@ def step_imp(context):
         context, "/uproxy_router/remove_router", {
             "user": context.uproxy_router['user'],
             "group_id": context.uproxy_router['group_id'],
-            "is_sync": "true",
+            "is_sync": True
         })
 
 
@@ -1912,8 +1910,8 @@ def step_impl(context):
     assert match is not None
     for temp in match:
         if temp['uguard-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] and \
-                temp['urman-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] or \
-                temp['uguard-mgr_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]:
+            temp['urman-agent_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"] or \
+            temp['uguard-mgr_status'] in ["STATUS_OK", "STATUS_OK(leader)", "STATUS_OK(master)"]:
             return
         else:
             assert False
@@ -1943,14 +1941,14 @@ def step_imp(context, action, component):
             context, "/server/pause", {
                 "server_id": server_info['server_id'],
                 "component": component,
-                "is_sync": "true",
+                "is_sync": True
             })
     else:
         api_request_post(
             context, "/server/start", {
                 "server_id": server_info['server_id'],
                 "component": component,
-                "is_sync": "true",
+                "is_sync": True
             })
 
 
@@ -2696,7 +2694,7 @@ def step_imp(context, duration):
             .format(context.mysql_instance['mysql_id']), resp)
         slave = pyjq.first(
             '.data[] | select(."role" == "STATUS_MYSQL_SLAVE" and ."mysql_id" == "{0}")'
-                .format(context.mysql_instance['mysql_id']), resp)
+            .format(context.mysql_instance['mysql_id']), resp)
         if old_master is not None and new_master is not None and slave is not None:
             return True
 
@@ -2789,7 +2787,7 @@ def step_imp(context, action, role, component):
         When I action {0} component {1}
         Then the response is ok
         Then the component {1} should be running in 60s
-                """.format(action, component))
+        """.format(action, component))
 
 
 @then(
@@ -2883,7 +2881,6 @@ def step_impl(context, count):
     install_params["tag_list"] = "[]"
 
     api_request_post(context, "database/add_instance", install_params)
-
 
 @then(u'the MySQL instance should not be health in {duration:time}')
 def step_imp(context, duration):
