@@ -1,7 +1,7 @@
 Feature: prepare
 
   Scenario: prepare DMP environment
-    When I prepare 3 agent environment
+    When I prepare 16 agent environment
     And I prepare 3 mgr environment
 
   Scenario: prepare an empty Mysql group
@@ -15,8 +15,8 @@ Feature: prepare
     Then the sip pool should contain the added IP
 
   Scenario: prepare MySQL group and instance
-    When I prepare 2 group MySQL 1m1s
-    And I prepare 3 MySQL Single instance
+    When I prepare 3 group MySQL 1m1s
+    And I prepare 4 MySQL Single instance
 #    And I prepare 1 group MySQL 1m2s
 #    And I prepare 1 group MySQL 1m3s
 
