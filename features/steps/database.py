@@ -2690,10 +2690,10 @@ def step_imp(context, duration):
         })
         old_master = pyjq.first(
             '.data[] | select(."mysql_status" != "STATUS_MYSQL_HEALTH_OK" and ."mysql_id" = "{0}")'
-                .format(context.master_info['mysql_id']), resp)
+            .format(context.master_info['mysql_id']), resp)
         new_master = pyjq.first(
             '.data[] | select(."role" == "STATUS_MYSQL_MASTER" and ."mysql_id" != "{0}")'
-                .format(context.mysql_instance['mysql_id']), resp)
+            .format(context.mysql_instance['mysql_id']), resp)
         slave = pyjq.first(
             '.data[] | select(."role" == "STATUS_MYSQL_SLAVE" and ."mysql_id" == "{0}")'
                 .format(context.mysql_instance['mysql_id']), resp)
