@@ -861,6 +861,7 @@ def step_imp(context, code, duration):
     def condition(context, flag):
         resp = api_get(context, "/alert_record/list_search", {
             'order_by': 'timestamp',
+            'number ' : context.page_size_to_select_all,
             'ascending': 'false',
         })
 
