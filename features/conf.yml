@@ -1,4 +1,4 @@
-base_url: http://10.186.17.201:8799/v3/
+base_url: http://10.186.18.122:8799/v3/
 component_installation_dir: /opt/
 time_weight: 1
 page_size_to_select_all: 999
