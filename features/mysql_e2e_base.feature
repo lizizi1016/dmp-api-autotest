@@ -196,7 +196,7 @@ Feature: base cases.272
     And MySQL instance HA status should be running in 1m
 
   @test
-  Scenario: MySQL-020-restart slave uguard-agent and view instance data
+  Scenario: MySQL-019-restart slave uguard-agent and view instance data
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
 
     When I action pause MySQL instance component uguard-agent
@@ -216,13 +216,13 @@ Feature: base cases.272
     And action start MySQL instance component uguard-agent should succeed in 1m
 
   @test
-  Scenario: MySQL-021-add MongoDB group should succeed
+  Scenario: MySQL-020-add MongoDB group should succeed
     When I found a valid port, or I skip the test
     And I add MongoDB group
     Then the response is ok
     And the MongoDB group list should contains the MongoDB group
 
-  Scenario: MySQL-022-add MongoDB instance should succeed
+  Scenario: MySQL-021-add MongoDB instance should succeed
     When I found a server with components ustats,udeploy,uguard-agent,urman-agent, or I skip the test
     And I found a MongoDB group without MongoDB instance, or I skip the test
     When I add MongoDB instance
@@ -234,7 +234,7 @@ Feature: base cases.272
     Then the response is ok
     And the MongoDB group should have 1 running MongoDB master and 1 running MongoDB slave in 1m
 
-  Scenario: MySQL-023-stop and start MongoDB instance should succeed
+  Scenario: MySQL-022-stop and start MongoDB instance should succeed
     When I found a running MongoDB instance slave, or I skip the test
     And I action stop the MongoDB instance
     Then the response is ok
@@ -244,13 +244,13 @@ Feature: base cases.272
     Then the response is ok
     And the MongoDB instance should started in 2m
 
-  Scenario: MySQL-024-remove MongoDB instance should succeed
+  Scenario: MySQL-023-remove MongoDB instance should succeed
     When I found a running MongoDB instance slave, or I skip the test
     And I remove MongoDB instance
     Then the response is ok
     And the MongoDB instance list should not contains the MongoDB instance in 2m
 
-  Scenario Outline: MySQL-025-update MySQL configuration with host connect should succeed
+  Scenario Outline: MySQL-024-update MySQL configuration with host connect should succeed
     When I found a running MySQL instance, or I skip the test
     And I update MySQL configuration with host connect "<option>" to "<option_value>"
     Then the response is ok
@@ -266,7 +266,7 @@ Feature: base cases.272
       | slave_net_timeout | 998          |
       | slave_net_timeout | 997          |
 
-  Scenario: MySQL-026-components status when disable HA master-slave instance
+  Scenario: MySQL-025-components status when disable HA master-slave instance
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I action stop role STATUS_MYSQL_SLAVE on HA instance
     Then the response is ok
@@ -275,7 +275,7 @@ Feature: base cases.272
     Then the response is ok
     And the server uguard should running
 
-  Scenario Outline: MySQL-031-Highly Available policy add RTO/RPO template
+  Scenario Outline: MySQL-026-Highly Available policy add RTO/RPO template
     When I add a <type> template
     Then the response is ok
     And the Highly Available policy list should contains the <type> template
@@ -285,7 +285,7 @@ Feature: base cases.272
       | rto  |
       | rpo  |
 
-  Scenario Outline: MySQL-32-Highly Available policy update RTO/RPO template configuration
+  Scenario Outline: MySQL-027-Highly Available policy update RTO/RPO template configuration
     When I found a valid <type> template, or I skip the test
     And I update the <type> template configuration, <config>
     Then the response is ok
@@ -296,7 +296,7 @@ Feature: base cases.272
       | rto  | sla_rto: 700, sla_rto_levels: 20,30,400                                |
       | rpo  | sla_rpo: 1, sla_rpo_levels: 10,40,500, sla_rpo_error_levels: 20,50,500 |
 
-  Scenario Outline: MySQL-033-Highly Available policy remove RTO/RPO template
+  Scenario Outline: MySQL-028-Highly Available policy remove RTO/RPO template
     When I found a valid <type> template, or I skip the test
     And I remove the <type> template
     Then the response is ok
@@ -307,21 +307,7 @@ Feature: base cases.272
       | rto  |
       | rpo  |
 
-  Scenario: MySQL-039-pull MySQL instance GTID
-    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
-    And I create and insert table in slave instance "use mysql;create table test03(id int auto_increment not null primary key ,uname char(8));"
-    When I query the slave instance "select table_name from information_schema.tables where table_name="test03";"
-    Then the MySQL response should be
-      | table_name |
-      | test03     |
-    And the MySQL instance should be exclude HA in 1m
-    When I pull the MySQL instance GTID
-    Then the response is ok
-    When I enable the MySQL instance HA
-    Then the response is ok
-    And MySQL instance HA status should be running in 1m
-
-  Scenario: MySQL-040-MySQL group GTID compared
+  Scenario: MySQL-029-MySQL group GTID compared
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     Then the MySQL group GTID should be consistent in 1m
     When I create and insert table in slave instance "use mysql;create table test019(id int auto_increment not null primary key ,uname char(8));"
