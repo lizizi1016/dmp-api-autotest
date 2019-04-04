@@ -127,4 +127,70 @@ Feature: base cases.272
     And I kill three master pid
     Then master-slave switching in 1m
     And expect alert code "EXCLUDE_INSTANCE_SUCCESS" in 2m
-	
+
+  @test
+  Scenario: MySQL-015-database/create MySQL user should succeed
+    When I found a running MySQL instance, or I skip the test
+    And I create MySQL user "testcase" and grants "all privileges on *.*"
+    Then the response is ok
+
+    When I query the MySQL instance "show grants for 'testcase';"
+    Then the MySQL response should be
+      | Grants for testcase@%                         |
+      | GRANT ALL PRIVILEGES ON *.* TO 'testcase'@'%' |
+
+    When I create MySQL user "testcase" and grants "select on *.*"
+    Then the response is ok
+
+    When I query the MySQL instance "show grants for 'testcase';"
+    Then the MySQL response should be
+      | Grants for testcase@%                         |
+      | GRANT ALL PRIVILEGES ON *.* TO 'testcase'@'%' |
+
+  @test
+  Scenario: MySQL-016-data/update MySQL user password
+    When I found a running MySQL instance, or I skip the test
+    And I create MySQL user "test55" and grants "all privileges on *.*"
+    Then the response is ok
+    When I query the MySQL instance "show grants for 'test55';"
+    Then the MySQL response should be
+      | Grants for test55@%                         |
+      | GRANT ALL PRIVILEGES ON *.* TO 'test55'@'%' |
+
+    When I update MySQL user "test55" and password "test"
+    Then the response is ok
+
+    When I query the MySQL instance use user "test55" "show grants for 'test55';"
+    Then the MySQL response should be
+      | Grants for test55@%                         |
+      | GRANT ALL PRIVILEGES ON *.* TO 'test55'@'%' |
+
+  @test
+  Scenario: MySQL-017-database/takeover MySQL instance
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I detach MySQL instance
+    Then the response is ok
+
+    Then the MySQL instance should be not exist
+    When I takeover MySQL instance
+    Then the response is ok
+    And the MySQL instance should be listed
+
+  @test
+  Scenario: MySQL-018-idempotent exclude and include ha
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I exclude ha MySQL instance
+    Then the response is ok
+    And MySQL instance ha enable should stopped in 1m
+
+    When I enable the MySQL instance HA
+    Then the response is ok
+    And MySQL instance HA status should be running in 1m
+
+    When I stop MySQL instance ha enable
+    Then the response is ok
+    And MySQL instance ha enable should stopped in 1m
+
+    When I enable the MySQL instance HA
+    Then the response is ok
+    And MySQL instance HA status should be running in 1m
