@@ -194,7 +194,28 @@ Feature: base cases.272
     When I enable the MySQL instance HA
     Then the response is ok
     And MySQL instance HA status should be running in 1m
-    
+
+  @test
+  Scenario: MySQL-020-restart slave uguard-agent and view instance data
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+
+    When I action pause MySQL instance component uguard-agent
+    Then the response is ok
+    And action pause MySQL instance component uguard-agent should succeed in 1m
+
+    When I create and insert table in master instance "use mysql;create table test55(id int auto_increment not null primary key ,uname char(8));"
+    Then the response is ok
+    When I query the slave instance "select table_name from information_schema.tables where table_name="test55";"
+    Then the MySQL response should be
+      | table_name |
+      | test55     |
+    When I create and insert table in master instance "use mysql;DROP TABLE test55;"
+    Then the response is ok
+    When I action start MySQL instance component uguard-agent
+    Then the response is ok
+    And action start MySQL instance component uguard-agent should succeed in 1m
+
+  @test
   Scenario: MySQL-021-add MongoDB group should succeed
     When I found a valid port, or I skip the test
     And I add MongoDB group
