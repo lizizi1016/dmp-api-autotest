@@ -5,12 +5,7 @@ services:
       privileged: true
       stdin_open: true
       tty: true
-      extra_hosts:
-        - "docker-registry:10.186.18.20"
       cap_add:
         - ALL
       security_opt:
         - seccomp:unconfined
-      working_dir: /opt
-      volumes:
-        - /shared:/shared
