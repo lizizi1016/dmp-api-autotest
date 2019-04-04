@@ -249,3 +249,56 @@ Feature: base cases.272
     And I remove MongoDB instance
     Then the response is ok
     And the MongoDB instance list should not contains the MongoDB instance in 2m
+
+  Scenario Outline: MySQL-025-update MySQL configuration with host connect should succeed
+    When I found a running MySQL instance, or I skip the test
+    And I update MySQL configuration with host connect "<option>" to "<option_value>"
+    Then the response is ok
+    When I wait for updating MySQL configuration finish in 1m
+    And I query the MySQL instance "show global variables like '<option>'"
+    Then the MySQL response should be
+      | Variable_name | Value          |
+      | <option>      | <option_value> |
+
+    Examples:
+      | option            | option_value |
+      | slave_net_timeout | 999          |
+      | slave_net_timeout | 998          |
+      | slave_net_timeout | 997          |
+
+  Scenario: MySQL-026-components status when disable HA master-slave instance
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I action stop role STATUS_MYSQL_SLAVE on HA instance
+    Then the response is ok
+    And the server uguard should running
+    When I action stop role STATUS_MYSQL_MASTER on HA instance
+    Then the response is ok
+    And the server uguard should running
+
+  Scenario: MySQL-027-takeover MySQL and view data consistent or remove instance
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I detach MySQL instance
+    Then the response is ok
+    Then the MySQL instance should be not exist
+    When I takeover MySQL instance
+    Then the response is ok
+    And the MySQL instance should be listed
+
+    When I enable the MySQL instance HA
+    Then the response is ok
+    And MySQL instance HA status should be running in 1m
+
+    When I create and insert table in master instance "use mysql;create table test5(id int auto_increment not null primary key ,uname char(8));"
+    Then the response is ok
+    When I query the slave instance "select table_name from information_schema.tables where table_name="test5";"
+    Then the MySQL response should be
+      | table_name |
+      | test5      |
+    When I create and insert table in master instance "use mysql;DROP TABLE test5;"
+    And I stop MySQL instance ha enable
+    Then the response is ok
+    And MySQL instance ha enable should stopped in 1m
+
+    When I remove MySQL instance
+    Then the response is ok
+    And the MySQL instance list should not contains the MySQL instance
