@@ -306,25 +306,3 @@ Feature: base cases.272
       | type |
       | rto  |
       | rpo  |
-
-  Scenario: MySQL-029-MySQL group GTID compared
-    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
-    Then the MySQL group GTID should be consistent in 1m
-    When I create and insert table in slave instance "use mysql;create table test019(id int auto_increment not null primary key ,uname char(8));"
-    And I query the slave instance "select table_name from information_schema.tables where table_name="test019";"
-    Then the MySQL response should be
-      | table_name |
-      | test019    |
-    And the MySQL instance should be exclude HA in 1m
-    And the MySQL group GTID should not consistent in 1m
-
-    When I action stop role STATUS_MYSQL_MASTER on HA instance
-    Then the response is ok
-
-    When I action start role STATUS_MYSQL_SLAVE on HA instance
-    Then the response is ok
-    When I enable HA on the MySQL instance with uguard_status not health
-    Then the response is ok
-    And the MySQL group GTID should be consistent in 1m
-
-    When I create and insert table in master instance "use mysql;DROP TABLE test019;"
