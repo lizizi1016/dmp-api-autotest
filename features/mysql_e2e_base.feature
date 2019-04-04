@@ -275,30 +275,70 @@ Feature: base cases.272
     Then the response is ok
     And the server uguard should running
 
-  Scenario: MySQL-027-takeover MySQL and view data consistent or remove instance
-    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
-    And I detach MySQL instance
+  Scenario Outline: MySQL-031-Highly Available policy add RTO/RPO template
+    When I add a <type> template
     Then the response is ok
-    Then the MySQL instance should be not exist
-    When I takeover MySQL instance
-    Then the response is ok
-    And the MySQL instance should be listed
+    And the Highly Available policy list should contains the <type> template
 
+    Examples: sla type
+      | type |
+      | rto  |
+      | rpo  |
+
+  Scenario Outline: MySQL-32-Highly Available policy update RTO/RPO template configuration
+    When I found a valid <type> template, or I skip the test
+    And I update the <type> template configuration, <config>
+    Then the response is ok
+    And the <type> template should be <config>
+
+    Examples: update config
+      | type | config                                                                 |
+      | rto  | sla_rto: 700, sla_rto_levels: 20,30,400                                |
+      | rpo  | sla_rpo: 1, sla_rpo_levels: 10,40,500, sla_rpo_error_levels: 20,50,500 |
+
+  Scenario Outline: MySQL-033-Highly Available policy remove RTO/RPO template
+    When I found a valid <type> template, or I skip the test
+    And I remove the <type> template
+    Then the response is ok
+    And the <type> template should not exist
+
+    Examples: sla type
+      | type |
+      | rto  |
+      | rpo  |
+
+  Scenario: MySQL-039-pull MySQL instance GTID
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I create and insert table in slave instance "use mysql;create table test03(id int auto_increment not null primary key ,uname char(8));"
+    When I query the slave instance "select table_name from information_schema.tables where table_name="test03";"
+    Then the MySQL response should be
+      | table_name |
+      | test03     |
+    And the MySQL instance should be exclude HA in 1m
+    When I pull the MySQL instance GTID
+    Then the response is ok
     When I enable the MySQL instance HA
     Then the response is ok
     And MySQL instance HA status should be running in 1m
 
-    When I create and insert table in master instance "use mysql;create table test5(id int auto_increment not null primary key ,uname char(8));"
-    Then the response is ok
-    When I query the slave instance "select table_name from information_schema.tables where table_name="test5";"
+  Scenario: MySQL-040-MySQL group GTID compared
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    Then the MySQL group GTID should be consistent in 1m
+    When I create and insert table in slave instance "use mysql;create table test019(id int auto_increment not null primary key ,uname char(8));"
+    And I query the slave instance "select table_name from information_schema.tables where table_name="test019";"
     Then the MySQL response should be
       | table_name |
-      | test5      |
-    When I create and insert table in master instance "use mysql;DROP TABLE test5;"
-    And I stop MySQL instance ha enable
-    Then the response is ok
-    And MySQL instance ha enable should stopped in 1m
+      | test019    |
+    And the MySQL instance should be exclude HA in 1m
+    And the MySQL group GTID should not consistent in 1m
 
-    When I remove MySQL instance
+    When I action stop role STATUS_MYSQL_MASTER on HA instance
     Then the response is ok
-    And the MySQL instance list should not contains the MySQL instance
+
+    When I action start role STATUS_MYSQL_SLAVE on HA instance
+    Then the response is ok
+    When I enable HA on the MySQL instance with uguard_status not health
+    Then the response is ok
+    And the MySQL group GTID should be consistent in 1m
+
+    When I create and insert table in master instance "use mysql;DROP TABLE test019;"
