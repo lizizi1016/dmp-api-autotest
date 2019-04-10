@@ -369,23 +369,4 @@
       "ustats_id": "ustats-udp19",
       "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
     }
-  },
-  {
-    "url": "v3/server/add",
-    "title": "添加服务器",
-    "json": {
-      "uagent_install_method": "ssh",
-      "server_ip": "10.20.30.20",
-      "ssh_port": "22",
-      "ssh_user": "root",
-      "ssh_password": "sshpass",
-      "hostname": "udp20",
-      "server_id": "server-udp20",
-      "uagent_path": "/opt/uagent",
-      "uagent_id": "uagent-udp20",
-      "uagent_install_file": "uagent-9.9.9.9-qa.x86_64.rpm",
-      "ustats_path": "/opt/ustats",
-      "ustats_id": "ustats-udp20",
-      "ustats_install_file": "ustats-9.9.9.9-qa.x86_64.rpm"
-    }
   }]
