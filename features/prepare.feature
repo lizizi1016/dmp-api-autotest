@@ -14,6 +14,12 @@ Feature: prepare
     Then the response is ok
     Then the sip pool should contain the added IP
 
+  Scenario: add ushard group should succeed
+    When I found 2 valid ports, or I skip the test
+    And I add a Ushard group
+    Then the response is ok
+    And the Ushard group list should contains the Ushard group
+
   Scenario: prepare MySQL group and instance
     When I prepare 3 group MySQL 1m1s
     And I prepare 4 MySQL Single instance
