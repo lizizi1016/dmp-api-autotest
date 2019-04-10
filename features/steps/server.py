@@ -306,7 +306,7 @@ def step_impl(context, comps):
     			Then the response is ok
     			Then the {server_id}'s components, {components} should be stopped in 60s
     		""".format(components=",".join(comps), server_id=server_id))
-
+    time.sleep(3)
 
 @then(
     u'the {server_id:strings}\'s component{s:s?}, {comps:strings+} should be {status:strings} in {duration:time}')
@@ -352,30 +352,11 @@ def step_impl(context, comps):
     			Then the response is ok
     			Then the {server_id}'s components, {components} should be running in 60s		
     		""".format(components=",".join(comps), server_id=server_id))
+    time.sleep(3)
 
-
-@When(u'update configuration metadata, {template_values:option_values}')
-def step_impl(context, template_values):
-    template_params = {
-        "value": template_values['is_running']
-    }
-    api_request_post(context, "helper/metadata/uguard_config/exercise_task/is_running/modify", template_params)
-
-
-@then(
-    u'the alarm records list should contains, {code:string}\'s alarm in {duration:time}')
-def step_impl(context, code, duration):
-    def condition(context, flag):
-        resp = api_get(context, "/alert_record/list_search", {
-            'order_by': 'timestamp',
-            'ascending': 'false',
-        })
-        alert_info = pyjq.first('.data[] | select(."alert_comp_id" == "{0}")'.format(code),
-                                resp)
-        if alert_info != None:
-            return True
-
-    waitfor(context, condition, duration)
+@when(u'I trigger the uguard drill')
+def step_impl(context):
+    api_request_post(context, "helper/component/uguard/trigger_exercise_task")
 
 
 @when(u'I start {comps:strings+} except the {master_slave:string}\'s server')

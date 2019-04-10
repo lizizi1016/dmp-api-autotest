@@ -71,14 +71,7 @@ Feature: base cases.272
     And update MySQL group SIP successful in 1m
 
   @test @case.272
-  Scenario: MySQL-009-database/stop MySQL service
-    When I found a running MySQL instance, or I skip the test
-    And I stop MySQL service
-    Then the response is ok
-    And stop MySQL service should succeed in 1m
-
-  @test @case.272
-  Scenario: MySQL-010-database/reset database instance
+  Scenario: MySQL-09-database/reset database instance
     When I found a running MySQL instance, or I skip the test
     And I make a manual backup on the MySQL instance
     Then the response is ok
@@ -92,14 +85,14 @@ Feature: base cases.272
     And reset database instance should succeed in 2m
 
   @test @case.272
-  Scenario: MySQL-011-database/promote to master
+  Scenario: MySQL-010-database/promote to master
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I promote slave instance to master
     Then the response is ok
     And promote slave instance to master should succeed in 1m
 
   @test @case.272
-  Scenario Outline: view slave staus
+  Scenario Outline: MySQL-011-view slave staus
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I query the slave instance "SELECT SERVICE_STATE FROM performance_schema.<option>"
     Then the MySQL response should be
@@ -120,16 +113,8 @@ Feature: base cases.272
       | testcase   |
     When I execute the MySQL instance "use mysql;DROP TABLE testcase;"
 
-  @test @case.272
-  Scenario: MySQL-014-master-slave switching when kill three master pid
-    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
-    And I found alert code "EXCLUDE_INSTANCE_SUCCESS", or I skip the test
-    And I kill three master pid
-    Then master-slave switching in 1m
-    And expect alert code "EXCLUDE_INSTANCE_SUCCESS" in 2m
-
   @test
-  Scenario: MySQL-015-database/create MySQL user should succeed
+  Scenario: MySQL-013-database/create MySQL user should succeed
     When I found a running MySQL instance, or I skip the test
     And I create MySQL user "testcase" and grants "all privileges on *.*"
     Then the response is ok
@@ -148,7 +133,7 @@ Feature: base cases.272
       | GRANT ALL PRIVILEGES ON *.* TO 'testcase'@'%' |
 
   @test
-  Scenario: MySQL-016-data/update MySQL user password
+  Scenario: MySQL-014-data/update MySQL user password
     When I found a running MySQL instance, or I skip the test
     And I create MySQL user "test55" and grants "all privileges on *.*"
     Then the response is ok
@@ -166,18 +151,7 @@ Feature: base cases.272
       | GRANT ALL PRIVILEGES ON *.* TO 'test55'@'%' |
 
   @test
-  Scenario: MySQL-017-database/takeover MySQL instance
-    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
-    And I detach MySQL instance
-    Then the response is ok
-
-    Then the MySQL instance should be not exist
-    When I takeover MySQL instance
-    Then the response is ok
-    And the MySQL instance should be listed
-
-  @test
-  Scenario: MySQL-018-idempotent exclude and include ha
+  Scenario: MySQL-015-idempotent exclude and include ha
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
     And I exclude ha MySQL instance
     Then the response is ok
@@ -196,7 +170,7 @@ Feature: base cases.272
     And MySQL instance HA status should be running in 1m
 
   @test
-  Scenario: MySQL-019-restart slave uguard-agent and view instance data
+  Scenario: MySQL-016-restart slave uguard-agent and view instance data
     When I found 1 MySQL groups with MySQL HA instances, or I skip the test
 
     When I action pause MySQL instance component uguard-agent
@@ -216,13 +190,13 @@ Feature: base cases.272
     And action start MySQL instance component uguard-agent should succeed in 1m
 
   @test
-  Scenario: MySQL-020-add MongoDB group should succeed
+  Scenario: MySQL-017-add MongoDB group should succeed
     When I found a valid port, or I skip the test
     And I add MongoDB group
     Then the response is ok
     And the MongoDB group list should contains the MongoDB group
 
-  Scenario: MySQL-021-add MongoDB instance should succeed
+  Scenario: MySQL-018-add MongoDB instance should succeed
     When I found a server with components ustats,udeploy,uguard-agent,urman-agent, or I skip the test
     And I found a MongoDB group without MongoDB instance, or I skip the test
     When I add MongoDB instance
@@ -234,7 +208,7 @@ Feature: base cases.272
     Then the response is ok
     And the MongoDB group should have 1 running MongoDB master and 1 running MongoDB slave in 1m
 
-  Scenario: MySQL-022-stop and start MongoDB instance should succeed
+  Scenario: MySQL-019-stop and start MongoDB instance should succeed
     When I found a running MongoDB instance slave, or I skip the test
     And I action stop the MongoDB instance
     Then the response is ok
@@ -244,13 +218,13 @@ Feature: base cases.272
     Then the response is ok
     And the MongoDB instance should started in 2m
 
-  Scenario: MySQL-023-remove MongoDB instance should succeed
+  Scenario: MySQL-020-remove MongoDB instance should succeed
     When I found a running MongoDB instance slave, or I skip the test
     And I remove MongoDB instance
     Then the response is ok
     And the MongoDB instance list should not contains the MongoDB instance in 2m
 
-  Scenario Outline: MySQL-024-update MySQL configuration with host connect should succeed
+  Scenario Outline: MySQL-021-update MySQL configuration with host connect should succeed
     When I found a running MySQL instance, or I skip the test
     And I update MySQL configuration with host connect "<option>" to "<option_value>"
     Then the response is ok
@@ -266,16 +240,7 @@ Feature: base cases.272
       | slave_net_timeout | 998          |
       | slave_net_timeout | 997          |
 
-  Scenario: MySQL-025-components status when disable HA master-slave instance
-    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
-    And I action stop role STATUS_MYSQL_SLAVE on HA instance
-    Then the response is ok
-    And the server uguard should running
-    When I action stop role STATUS_MYSQL_MASTER on HA instance
-    Then the response is ok
-    And the server uguard should running
-
-  Scenario Outline: MySQL-026-Highly Available policy add RTO/RPO template
+  Scenario Outline: MySQL-022-Highly Available policy add RTO/RPO template
     When I add a <type> template
     Then the response is ok
     And the Highly Available policy list should contains the <type> template
@@ -285,7 +250,7 @@ Feature: base cases.272
       | rto  |
       | rpo  |
 
-  Scenario Outline: MySQL-027-Highly Available policy update RTO/RPO template configuration
+  Scenario Outline: MySQL-023-Highly Available policy update RTO/RPO template configuration
     When I found a valid <type> template, or I skip the test
     And I update the <type> template configuration, <config>
     Then the response is ok
@@ -296,7 +261,7 @@ Feature: base cases.272
       | rto  | sla_rto: 700, sla_rto_levels: 20,30,400                                |
       | rpo  | sla_rpo: 1, sla_rpo_levels: 10,40,500, sla_rpo_error_levels: 20,50,500 |
 
-  Scenario Outline: MySQL-028-Highly Available policy remove RTO/RPO template
+  Scenario Outline: MySQL-024-Highly Available policy remove RTO/RPO template
     When I found a valid <type> template, or I skip the test
     And I remove the <type> template
     Then the response is ok
@@ -306,3 +271,40 @@ Feature: base cases.272
       | type |
       | rto  |
       | rpo  |
+
+  Scenario: MySQL-025-uguard-agent restart in master instance
+    When I found a MySQL group with 2 MySQL instance, and without SIP, or I skip the test
+    When I found a valid SIP, or I skip the test
+    And I configure MySQL groups SIP
+    Then the response is ok
+    And update MySQL groups SIP successful in 1m
+
+    When I stop the MySQL instance master component uguard-agent
+    And I start the MySQL instance master component uguard-agent
+
+    When I execute the MySQL group "create table mysql.test_group_sip04(id int auto_increment not null primary key ,uname char(8));" with sip
+    And I query the MySQL group "select table_name from information_schema.tables where table_name="test_group_sip04";" with sip
+    Then the MySQL response should be
+      | table_name       |
+      | test_group_sip04 |
+    When I execute the MySQL group "drop table mysql.test_group_sip04;" with sip
+    Then the response is ok
+
+  Scenario: MySQL-026-restart all uguard-agents, then insert data through the group SIP successfully
+    When I found servers with running uguard-agent, or I skip the test
+    And I pause uguard-agent on all these servers
+    And I start uguard-agent on all these servers
+    When I found a MySQL group with 2 MySQL instance, and with SIP, or I skip the test
+    And I found a master MySQL's instance in the MySQL group
+    When I execute the MySQL group "create table mysql.test_group_sip_restart(id int auto_increment not null primary key ,uname char(8));" with sip
+    And I query on the master instance, with the sql: "select table_name from information_schema.tables where table_name="test_group_sip_restart";"
+    Then the MySQL response should be
+      | table_name             |
+      | test_group_sip_restart |
+    When I found a slave MySQL's instance in the MySQL group
+    And I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="test_group_sip_restart";"
+    Then the MySQL response should be
+      | table_name             |
+      | test_group_sip_restart |
+    When I execute the MySQL group "drop table mysql.test_group_sip_restart;" with sip
+    Then the response is ok
