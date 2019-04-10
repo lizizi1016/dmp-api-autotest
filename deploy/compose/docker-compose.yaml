@@ -198,16 +198,6 @@ services:
       file: common.yaml
       service: agent
 
-  udp-20:
-    container_name: udp-20
-    hostname: udp20
-    networks:
-      quick_net:
-        ipv4_address: 10.20.30.20
-    extends:
-      file: common.yaml
-      service: agent
-
 networks:
   quick_net:
     driver: bridge
