@@ -1540,7 +1540,7 @@ def step_imp(context, status, duration):
 @when(u'I remove MongoDB instance')
 def step_imp(context):
     assert context.mongodb_info != None
-    api_request_post(context, "/mongodb/remove_instance", {
+    api_request_post(context, "mongodb/remove_instance", {
         "mongodb_id": context.mongodb_info['mongodb_id'],
         "is_sync": True
     })
@@ -2148,10 +2148,10 @@ def step_impl(context, count, with_without):
 
     condition = None
     if with_without == 'without':
-        condition = '.data[] | select(.group_instance_num == "{0}" and .uguard_status == "UGUARD_PRIMARY_SLAVE_ENABLE") | select(has("sip") | not)'.format(
+        condition = '.data[] | select(.group_instance_num == "{0}") | select(has("sip") | not)'.format(
             count)
     elif with_without == 'with':
-        condition = '.data[] | select(.group_instance_num == "{0}" and .uguard_status == "UGUARD_PRIMARY_SLAVE_ENABLE") | select(has("sip"))'.format(
+        condition = '.data[] | select(.group_instance_num == "{0}") | select(has("sip"))'.format(
             count)
 
     match = pyjq.all(condition, resp)
@@ -2161,6 +2161,7 @@ def step_impl(context, count, with_without):
             "Found no MySQL group with {0} MySQL instance, and without SIP".format(count))
     else:
         context.mysql_group = match
+    print(context.mysql_group)
 
 
 @when(u'I found a server of the MySQL group\'s {master_slave:string} instance')
@@ -2170,8 +2171,9 @@ def step_imp(context, master_slave):
 
 def find_group_server(context, master_slave):
     assert context.mysql_group != None
+    print(context.mysql_group)
     resp = api_get(context, "database/list_instance", {
-        "group_id": context.mysql_group[0]["group_id"],
+        "group_id": context.mysql_group[0]["group_id"]
     })
     condition = None
     if master_slave == 'master':
@@ -2184,7 +2186,7 @@ def find_group_server(context, master_slave):
 
 
 @then(
-    u'the slave mysql instance should {status:string} in {duration:time}'
+    u'the slave MySQL instance should {status:string} in {duration:time}'
 )
 def step_impl(context, status, duration):
     assert context.mysql_instance != None
@@ -2534,16 +2536,18 @@ def step_imp(context):
 @when(u'I trigger diagnosis report')
 def step_imp(context):
     assert context.mysql_instance != None
+    origin_id = None
     resp = api_get(context, "diagnosis_list/list", {
         "number": context.page_size_to_select_all,
     })
-    origin_id = pyjq.first('.data[]|.Key', resp)
+    if resp['data'] != None:
+        origin_id = pyjq.first('.data[]|.Key', resp)
     context.origin_id = origin_id
     body = {
         "server_id": context.mysql_instance['server_id'],
         "mysql_id": context.mysql_instance['mysql_id'],
         "group_id": context.mysql_instance['group_id'],
-        "is_sync": True,
+        "is_sync": True
     }
     api_request_post(context, "database/trigger_diagnosis_report", body)
 
@@ -2553,23 +2557,26 @@ def step_imp(context):
     resp = api_get(context, "diagnosis_list/list", {
         "number": context.page_size_to_select_all,
     })
-    match = pyjq.first('.data[]|.Key', resp)
+    if resp['data'] != None:
+        match = pyjq.first('.data[]|.Key', resp)
     assert context.origin_id != match
 
 
 @when(u'I trigger diagnosis score report')
 def step_imp(context):
     assert context.mysql_instance != None
+    origin_id = None
     resp = api_get(context, "diagnosis_score/list", {
         "number": context.page_size_to_select_all,
     })
-    origin_id = pyjq.first('.data[]|.Key', resp)
+    if resp['data'] != None:
+        origin_id = pyjq.first('.data[]|.Key', resp)
     context.origin_id = origin_id
     body = {
         "server_id": context.mysql_instance['server_id'],
         "mysql_id": context.mysql_instance['mysql_id'],
         "group_id": context.mysql_instance['group_id'],
-        "is_sync": True,
+        "is_sync": True
     }
     api_request_post(context, "database/trigger_diagnosis_score_report", body)
 
@@ -2579,7 +2586,8 @@ def step_imp(context):
     resp = api_get(context, "diagnosis_score/list", {
         "number": context.page_size_to_select_all,
     })
-    match = pyjq.first('.data[]|.Key', resp)
+    if resp['data'] != None:
+        match = pyjq.first('.data[]|.Key', resp)
     assert context.origin_id != match
 
 
@@ -2591,8 +2599,7 @@ def step_imp(context, statement):
     })
     mysql_master = pyjq.first(
         '.data[] | select(.role == "STATUS_MYSQL_MASTER")', resp)
-    master_root = get_mysql_instance_root_password(context,
-                                                   mysql_master['mysql_id'])
+    master_root = get_mysql_instance_root_password(context, mysql_master['mysql_id'])
     mysql = pyjq.first('.data[] | select(.role == "STATUS_MYSQL_SLAVE")', resp)
     assert mysql is not None
     context.mysql_instance = mysql
