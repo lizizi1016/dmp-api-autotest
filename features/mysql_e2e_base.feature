@@ -308,3 +308,93 @@ Feature: base cases.272
       | test_group_sip_restart |
     When I execute the MySQL group "drop table mysql.test_group_sip_restart;" with sip
     Then the response is ok
+
+  Scenario: MySQL-027-uguard-mgr restart
+    When I found a MySQL group with 2 MySQL instance, and with SIP, or I skip the test
+
+    When I action stop component uguard-mgr in server
+    Then the response is ok
+    And component uguard-mgr should stopped in 1m
+
+    When I action start component uguard-mgr
+    Then the response is ok
+    And component uguard-mgr should started in 1m
+
+    When I execute the MySQL group "use mysql;create table test10(id int auto_increment not null primary key ,uname char(8));" with sip
+    And I query the MySQL group "select table_name from information_schema.tables where table_name="test10";}" with sip
+    Then the MySQL response should be
+      | table_name |
+      | test10     |
+
+    When I execute the MySQL group "use mysql;DROP TABLE test10;" with sip
+    Then the response is ok
+
+  Scenario: MySQL-028-insert data through group SIP,with the slave's mysql down
+    When I found servers with running uguard-agent, or I skip the test
+    And I pause uguard-agent on all these servers
+
+    When I found a MySQL group with 2 MySQL instance, and with SIP, or I skip the test
+    When I found a server of the MySQL group's slave instance
+    And I start uguard-agent except the slave's server
+    When I kill 1 times slave mysql instance pid
+    Then the slave MySQL instance should stopped in 2m
+    When I start uguard-agent on the slave's server
+    Then the slave MySQL instance should running in 2m
+
+    When I execute the MySQL group "create table mysql.test_group_sip(id int auto_increment not null primary key ,uname char(8));" with sip
+    And I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="test_group_sip";"
+    Then the MySQL response should be
+      | table_name     |
+      | test_group_sip |
+    When I execute the MySQL group "use mysql;DROP TABLE test_group_sip;" with sip
+    Then the response is ok
+
+  Scenario: MySQL-029-insert data through group SIP
+    When I found servers with running uguard-agent, or I skip the test
+    And I pause uguard-agent on all these servers
+    When I found a MySQL group with 2 MySQL instance, and with SIP, or I skip the test
+    When I found a server of the MySQL group's slave instance
+    And I start uguard-agent except the slave's server
+    When I execute the MySQL group "create table mysql.test_group_sip_1(id int auto_increment not null primary key ,uname char(8));" with sip
+    And I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="test_group_sip_1";"
+    Then the MySQL response should be
+      | table_name       |
+      | test_group_sip_1 |
+    When I start uguard-agent on the slave's server
+    Then the slave mysql instance should running in 2m
+
+    When I execute the MySQL group "create table mysql.test_group_sip_2(id int auto_increment not null primary key ,uname char(8));" with sip
+    And I query on the slave instance, with the sql: "select table_name from information_schema.tables where table_name="test_group_sip_2";"
+    Then the MySQL response should be
+      | table_name       |
+      | test_group_sip_2 |
+
+  Scenario: MySQL-030-database/add SLA protocol and start or pause
+    When I found a running MySQL instance, or I skip the test
+    And I bind SLA protocol to the MySQL group
+    Then the response is ok
+    And SLA protocol of the MySQL group should be binded
+
+    When I enable the SLA protocol of the MySQL group
+    Then the response is ok
+    And SLA protocol should started
+
+    When I pause SLA protocol
+    Then the response is ok
+    And SLA protocol should paused
+
+    When I unbind SLA protocol
+    Then the response is ok
+    And SLA protocol should not exist
+
+  Scenario: MySQL-031-trigger diagnosis report
+    When I found a running MySQL instance, or I skip the test
+    And I trigger diagnosis report
+    Then the response is ok
+    Then the diagnosis list should contains the diagnosis report
+
+  Scenario: MySQL-032-trigger diagnosis score report
+    When I found a running MySQL instance, or I skip the test
+    And I trigger diagnosis score report
+    Then the response is ok
+    And the diagnosis score list should contains the diagnosis score
