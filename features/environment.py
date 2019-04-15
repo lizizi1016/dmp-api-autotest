@@ -6,7 +6,8 @@ def before_all(context):
     context.base_url = ud.get("base_url")
     context.component_installation_dir = ud.get(
         "component_installation_dir")
-    context.time_weight = ud.get("time_weight")
+    #context.time_weight = ud.get("time_weight")
+    context.time_weight = int(ud.get("time_weight"))
     context.page_size_to_select_all = ud.get(
         "page_size_to_select_all")
     context.token = None
