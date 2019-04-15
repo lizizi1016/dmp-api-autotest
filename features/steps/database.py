@@ -2638,7 +2638,6 @@ def step_imp(context):
         "is_sync": True
     }
     api_request_post(context, "database/leveling_gtid", body)
-    time.sleep(60)
 
 
 @then(u'the MySQL group GTID should be consistent in {duration:time}')
