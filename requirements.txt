@@ -1,6 +1,6 @@
 behave
 requests
-jq
+pyjq
 yapf
 pyyaml
 lxml
