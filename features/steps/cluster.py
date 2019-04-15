@@ -19,7 +19,7 @@ def step_impl(context):
     udeploy = api_get(context, "support/component?pattern=udeploy")[-1]["Name"]
     mysql = api_get(context, "support/component?pattern=mysql")[-1]["Name"]
 
-    api_request_post(context, "install/umc", {
+    api_post(context, "install/umc", {
         "is_sync": True,
         "component_path": "/opt",
         "server_id": "server-" + hostname,
@@ -46,6 +46,36 @@ def step_impl(context):
         "mysql_id": "mysql-udb1",
         "version": "5.7.20",
         "install_standard": "semi_sync"
+    })
+
+    uguard_mgr = api_get(context, "support/component?pattern=uguard-mgr")[-1]["Name"]
+    api_post(context, "server/install", {
+        "is_sync": True,
+        "server_id": "server-" + hostname,
+        "component": "uguard-mgr",
+        "uguard-mgr_path": "/opt/uguard-mgr",
+        "uguard-mgr_id": "uguard-mgr-" + hostname,
+        "uguard-mgr_install_file": uguard_mgr
+    })
+
+    umon = api_get(context, "support/component?pattern=umon")[-1]["Name"]
+    api_post(context, "server/install", {
+        "is_sync": True,
+        "server_id": "server-" + hostname,
+        "component": "umon",
+        "umon_path": "/opt/umon",
+        "umon_id": "umon-" + hostname,
+        "umon_install_file": umon
+    })
+
+    urman_mgr = api_get(context, "support/component?pattern=urman-mgr")[-1]["Name"]
+    api_request_post(context, "server/install", {
+        "is_sync": True,
+        "server_id": "server-" + hostname,
+        "component": "urman-mgr",
+        "urman-mgr_path": "/opt/urman-mgr",
+        "urman-mgr_id": "urman-mgr-" + hostname,
+        "urman-mgr_install_file": urman_mgr
     })
 
 
@@ -83,3 +113,18 @@ def step_impl(context):
         "ustats_id": "ustats-" + hostname,
         "ustats_install_file": ustats,
     })
+
+
+@when(u'I install Udeploy,Uguard-agent,Urman-agent on all server')
+def step_impl(context):
+    while True:
+        context.execute_steps(u"""
+                When I found a server without component uguard-agent, or I skip the test
+            """)
+        if context.server is None:
+            break
+        context.execute_steps(u"""
+                When I prepare the server for uguard
+                Then the response is ok
+            """)
+

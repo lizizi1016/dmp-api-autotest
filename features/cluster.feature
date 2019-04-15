@@ -8,3 +8,6 @@ Feature: dmp cluster
   Scenario: Add server
     When I add server from parameter
     Then the response is ok
+
+  Scenario: Install Udeploy,Uguard-agent,Urman-agent on all server
+    When I install Udeploy,Uguard-agent,Urman-agent on all server

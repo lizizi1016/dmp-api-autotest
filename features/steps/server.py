@@ -50,12 +50,11 @@ def step_impl(context, s, comps):
     condition = '.data[] | ' + " | ".join(conditions)
 
     match = pyjq.first(condition, resp)
+    context.server = match
+    
     if match is None:
         context.scenario.skip(
             "Found no server without components {0}".format(comps))
-    else:
-        context.server = match
-
 
 @when(
     u'I found a server with component{s:s?} {comps:strings+}, or I skip the test'
