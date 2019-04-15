@@ -4,3 +4,7 @@ Feature: dmp cluster
   Scenario: Init DMP
     When I init DMP
     Then the response is ok
+
+  Scenario: Add server
+    When I add server from parameter
+    Then the response is ok

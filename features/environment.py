@@ -12,6 +12,12 @@ def before_all(context):
         "page_size_to_select_all")
     context.token = None
     context.mysql_installation_dir = ud.get("mysql_installation_dir")
+
+    context.new_server_ip = ud.get('new_server_ip')
+    context.new_server_ssh_port = ud.get('new_server_ssh_port')
+    context.new_server_ssh_user = ud.get('new_server_ssh_user')
+    context.new_server_ssh_password = ud.get('new_server_ssh_password')
+
     context.group_sip_1 = ud.get('group_sip_1')
     context.group_sip_2 = ud.get('group_sip_2')
     context.group_sip_3 = ud.get('group_sip_3')

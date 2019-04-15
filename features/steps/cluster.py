@@ -47,3 +47,39 @@ def step_impl(context):
         "version": "5.7.20",
         "install_standard": "semi_sync"
     })
+
+
+@when(u'I add server from parameter')
+def step_impl(context):
+    assert context.new_server_ip != None
+    assert context.new_server_ssh_port != None
+    assert context.new_server_ssh_user != None
+    assert context.new_server_ssh_password != None
+
+    hostname = api_get(context, "support/hostname", {
+        "ip": context.new_server_ip,
+        "port": context.new_server_ssh_port,
+        "user": context.new_server_ssh_user,
+        "password": context.new_server_ssh_password,
+    })
+    hostname = hostname.strip()
+
+    uagent = api_get(context, "support/component?pattern=uagent")[-1]["Name"]
+    ustats = api_get(context, "support/component?pattern=ustats")[-1]["Name"]
+
+    api_request_post(context, "server/add", {
+        "is_sync": True,
+        "uagent_install_method": "ssh",
+        "server_ip": context.new_server_ip,
+        "ssh_port": context.new_server_ssh_port,
+        "ssh_user": context.new_server_ssh_user,
+        "ssh_password": context.new_server_ssh_password,
+        "hostname": hostname,
+        "server_id": "server-" + hostname,
+        "uagent_path": "/opt/uagent",
+        "uagent_id": "uagent-" + hostname,
+        "uagent_install_file": uagent,
+        "ustats_path": "/opt/ustats",
+        "ustats_id": "ustats-" + hostname,
+        "ustats_install_file": ustats,
+    })
