@@ -398,3 +398,20 @@ Feature: base cases.272
     And I trigger diagnosis score report
     Then the response is ok
     And the diagnosis score list should contains the diagnosis score
+
+  Scenario: MySQL-033-pull MySQL instance GTID
+    When I found 1 MySQL groups with MySQL HA instances, or I skip the test
+    And I create and insert table in slave instance "use mysql;create table test03(id int auto_increment not null primary key ,uname char(8));"
+    When I query the slave instance "select table_name from information_schema.tables where table_name="test03";"
+    Then the MySQL response should be
+      | table_name |
+      | test03     |
+    And the MySQL instance should be exclude HA in 1m
+    When I pull the MySQL instance GTID
+    Then the response is ok
+    When I enable the MySQL instance HA
+    Then the response is ok
+    And MySQL instance HA status should be running in 1m
+    When I execute on the slave instance "use mysql;drop table test03;"
+    Then the response is ok
+
