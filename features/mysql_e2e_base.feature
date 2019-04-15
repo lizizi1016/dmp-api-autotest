@@ -412,6 +412,4 @@ Feature: base cases.272
     When I enable the MySQL instance HA
     Then the response is ok
     And MySQL instance HA status should be running in 1m
-    When I execute on the slave instance "use mysql;drop table test03;"
-    Then the response is ok
 
