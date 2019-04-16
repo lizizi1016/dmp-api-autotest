@@ -3,7 +3,7 @@ default: prepare test
 prepare:
 	behave features/prepare.feature
 test:
-	behave  features/server.feature features/mysql_e2e_base.feature features/db_config.feature features/urman.feature features/destructive_test_cases.feature features/sippool.feature features/ushard.feature features/destructive_test_cases.feature
+	behave  features/server.feature features/mysql_e2e_base.feature features/db_config.feature features/urman.feature features/sippool.feature features/ushard.feature features/destructive_test_cases.feature
 install_deps:
 	pip install -r requirements.txt
 env_dmp:
