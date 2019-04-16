@@ -11,3 +11,9 @@ Feature: dmp cluster
 
   Scenario: Install Udeploy,Uguard-agent,Urman-agent on all server
     When I install Udeploy,Uguard-agent,Urman-agent on all server
+
+  Scenario: Install MySQLs
+    When I found all server with components uguard-agent,urman-agent,ustats,udeploy, or I skip the test
+    And I batch install the MySQL instance
+    Then the response is ok
+    And the batch MySQL instance list should contains the MySQL instance in 5m
