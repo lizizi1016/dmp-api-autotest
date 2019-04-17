@@ -128,3 +128,52 @@ def step_impl(context):
                 Then the response is ok
             """)
 
+@when(u'I batch add backup rules')
+def step_impl(context):
+    content = '实例别名,备份规则名,实例ID,服务器ID,备份工具,全备时间（cron）,增备时间（cron）,备份保留份数,备份优先级,备份binlog时间（cron）,binlog回收时间（天）,转储设备名,运维开始时间（cron),运维持续时间,only_slave,only_master'
+    
+    resp = api_get(context, "database/list_instance", {
+        "number": context.page_size_to_select_all,
+    })
+
+    mysqls = pyjq.all('.data[]', resp)
+    for mysql in mysqls:
+        mysql_alias = mysql['mysql_alias']
+        mysql_id = mysql['mysql_id']
+        rule_name = 'rule-' + mysql_id
+        server_id = mysql['server_id']
+        row = [mysql_alias, rule_name, mysql_id, server_id, 'xtrabackup', generate_full_backup_cron(),
+               generate_incr_backup_cron(), '2', generate_backup_priority(), '', '', '', '0 0 0 1/1 * ?', '1440m',
+               'false', 'false']
+        content = content + "\n" + ",".join(row)
+        
+        rule_name_binlog = rule_name + '_binlog'
+        row_binlog = [mysql_alias, rule_name_binlog, mysql_id, server_id, 'binlog', '', '', '', '',
+                      generate_incr_backup_cron(), '7', '', '0 0 0 1/1 * ?', '1440m', 'false', 'false']
+        content = content + "\n" + ",".join(row_binlog)
+
+    resp = api_post(
+        context,
+        "urman_rule/batch_add_backup_rules", {},
+        files={"csv": ('batch_install_mysql.csv', content)})
+    api_request_post(context, "progress/commit", {
+        "is_sync": True,
+        "task_limit": 30,
+        "id": resp['id'],
+    })
+
+def generate_full_backup_cron():
+    cron = ['0', str(random.randint(0, 59)), str(random.randint(0, 23))]
+    cron.extend(['?', '*'])
+    week = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+    cron.append(random.choice(week))
+    return ' '.join(cron)
+
+def generate_incr_backup_cron():
+    cron = ['0', str(random.randint(0, 59)), str(random.randint(0, 23))]
+    cron.extend(['1/1', '*', '?'])
+    return ' '.join(cron)
+
+def generate_backup_priority():
+    return str(random.randint(1, 99))
+

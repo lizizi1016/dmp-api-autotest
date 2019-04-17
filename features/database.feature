@@ -542,7 +542,7 @@ Feature: database
 
   Scenario: MySQL-036-batch install MySQL instances should succeed
     When I found all server with components uguard-agent,urman-agent,ustats,udeploy, or I skip the test
-    And I batch install the MySQL instance
+    And I batch install the MySQL m-s instances
     Then the response is ok
     And the batch MySQL instance list should contains the MySQL instance in 5m
 
