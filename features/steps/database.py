@@ -2335,9 +2335,9 @@ def batch_install_mysql(context, mysql_group_prefix, mysql_prefix, mysql_count_p
         mysql_alias = "{0}-{1}-{2}".format(mysql_prefix, group_idx, instance_idx_in_group)
         if instance_idx_in_group == 0:
             role = 'master'
+            context.batch_group.append(group_id)
         else: 
             role = 'slave'
-        context.batch_group.append(group_id)
         csv_content_server = """
 {group_id},{mysql_alias},{server_id},{server_ip},{role},uguard_semi_sync,{port},,5.7.21,mysql-5.7.21-linux-glibc2.12-x86_64.tar.gz,action,universe_op,universe_pass,my.cnf.5.7,/opt/mysql/etc/{port}/my.cnf,/opt/mysql/backup/{port},/opt/mysql/base/5.7.21,/opt/mysql/data/{port},/opt/mysql/log/binlog/{port},/opt/mysql/log/relaylog/{port},/opt/mysql/log/redolog/{port},/opt/mysql/tmp/{port},TRUE,FALSE,TRUE,SLA_RPO_sample,,90,mysql{port},mysql{port},{port},{port},,,/opt/mysql/data/{port}/mysqld.sock,应用英文名,应用名,数据库用途,应用节点描述,应用等级,灾备等级,域名改造,FALSE,应用tag,用途tag,英文简称,应用节点描述,用途,高可用方式,域名改造,操作系统,物理虚拟,创建时间,上线时间,备注,0 0 1 ? *,,0 0 23 1/1 * ?,,on,,,,,,,,""".format(
             group_id = group_id, 
@@ -2367,13 +2367,8 @@ def batch_install_mysql(context, mysql_group_prefix, mysql_prefix, mysql_count_p
 )
 def step_imp(context, duration):
     assert context.batch_group != None
-    group = []
-    i = 1
-    for group_id in context.batch_group:
-        if i % 2 == 0:
-            group.append(group_id)
-        i = i + 1
-
+    group = context.batch_group
+    
     def condition(context, flag):
         res = api_get(context, "database/list_group", {
             "number": context.page_size_to_select_all,
@@ -2381,7 +2376,7 @@ def step_imp(context, duration):
         count = 0
         for group_id in group:
             match = pyjq.first(
-                '.data[] | select(."group_id" == "{0}" and ."group_instance_num" == "2" and ."uguard_status" == "UGUARD_PRIMARY_SLAVE_ENABLE")'
+                '.data[] | select(."group_id" == "{0}" and ."uguard_status" == "UGUARD_PRIMARY_SLAVE_ENABLE")'
                     .format(group_id), res)
             if match is not None:
                 count = count + 1
