@@ -218,11 +218,23 @@ Feature: base cases.272
     Then the response is ok
     And the MongoDB instance should started in 2m
 
-  Scenario: MySQL-020-remove MongoDB instance should succeed
-    When I found a running MongoDB instance slave, or I skip the test
-    And I remove MongoDB instance
+  Scenario: MySQL-020-database/add SLA protocol and start or pause
+    When I found a running MySQL instance, or I skip the test
+    And I bind SLA protocol to the MySQL group
     Then the response is ok
-    And the MongoDB instance list should not contains the MongoDB instance in 2m
+    And SLA protocol of the MySQL group should be binded
+
+    When I enable the SLA protocol of the MySQL group
+    Then the response is ok
+    And SLA protocol should started
+
+    When I pause SLA protocol
+    Then the response is ok
+    And SLA protocol should paused
+
+    When I unbind SLA protocol
+    Then the response is ok
+    And SLA protocol should not exist
 
   Scenario Outline: MySQL-021-update MySQL configuration with host connect should succeed
     When I found a running MySQL instance, or I skip the test
@@ -369,23 +381,11 @@ Feature: base cases.272
       | table_name       |
       | test_group_sip_2 |
 
-  Scenario: MySQL-030-database/add SLA protocol and start or pause
-    When I found a running MySQL instance, or I skip the test
-    And I bind SLA protocol to the MySQL group
+  Scenario: MySQL-030-remove MongoDB instance should succeed
+    When I found a running MongoDB instance slave, or I skip the test
+    And I remove MongoDB instance
     Then the response is ok
-    And SLA protocol of the MySQL group should be binded
-
-    When I enable the SLA protocol of the MySQL group
-    Then the response is ok
-    And SLA protocol should started
-
-    When I pause SLA protocol
-    Then the response is ok
-    And SLA protocol should paused
-
-    When I unbind SLA protocol
-    Then the response is ok
-    And SLA protocol should not exist
+    And the MongoDB instance list should not contains the MongoDB instance in 2m
 
   Scenario: MySQL-031-trigger diagnosis report
     When I found a running MySQL instance, or I skip the test
