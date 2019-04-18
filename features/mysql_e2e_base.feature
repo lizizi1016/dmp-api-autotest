@@ -413,7 +413,7 @@ Feature: base cases.272
     Then the response is ok
     And MySQL instance HA status should be running in 1m
 
-  Scenario: MySQL-036-batch install MySQL instances should succeed
+  Scenario: MySQL-034-batch install MySQL instances should succeed
     When I found all server with components uguard-agent,urman-agent,ustats,udeploy, or I skip the test
     And I batch install the MySQL instance
     And I batch install the MySQL m-s instances
