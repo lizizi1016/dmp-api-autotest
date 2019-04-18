@@ -26,3 +26,10 @@ Feature: prepare
 #    And I prepare 1 group MySQL 1m2s
 #    And I prepare 1 group MySQL 1m3s
 
+  Scenario: add_backup_rule should succeed
+    When I found a MySQL instance without backup rule, or I skip the test
+    And I add a backup rule to the MySQL instance, which will be triggered in 2m
+    Then the response is ok
+    And the MySQL instance should have a backup rule
+    And the MySQL instance should have a new backup set in 3m
+
