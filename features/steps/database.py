@@ -2353,12 +2353,12 @@ def batch_install_mysql(context, mysql_group_prefix, mysql_prefix, mysql_count_p
     resp = api_post(
         context,
         "database/batch_install_instances", {
-            "task_limit": 30,
+            "task_limit": 15,
         },
         files={"csv": ('batch_install_mysql.csv', csv_content)})
     api_request_post(context, "progress/commit", {
         "is_sync": True,
-        "task_limit": 30,
+        "task_limit": 15,
         "id": resp['progress_id'],
     })
 
