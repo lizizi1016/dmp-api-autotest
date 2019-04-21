@@ -58,6 +58,16 @@ def step_impl(context):
         "uguard-mgr_install_file": uguard_mgr
     })
 
+    uguard_agent = api_get(context, "support/component?pattern=uguard-agent")[-1]["Name"]
+    api_post(context, "server/install", {
+        "is_sync": True,
+        "server_id": "server-" + hostname,
+        "component": "uguard-agent",
+        "uguard-agent_path": "/opt/uguard-agent",
+        "uguard-agent_id": "uguard-agent-" + hostname,
+        "uguard-agent_install_file": uguard_agent
+    })
+
     umon = api_get(context, "support/component?pattern=umon")[-1]["Name"]
     api_post(context, "server/install", {
         "is_sync": True,
@@ -69,13 +79,23 @@ def step_impl(context):
     })
 
     urman_mgr = api_get(context, "support/component?pattern=urman-mgr")[-1]["Name"]
-    api_request_post(context, "server/install", {
+    api_post(context, "server/install", {
         "is_sync": True,
         "server_id": "server-" + hostname,
         "component": "urman-mgr",
         "urman-mgr_path": "/opt/urman-mgr",
         "urman-mgr_id": "urman-mgr-" + hostname,
         "urman-mgr_install_file": urman_mgr
+    })
+
+    urman_agent = api_get(context, "support/component?pattern=urman-agent")[-1]["Name"]
+    api_request_post(context, "server/install", {
+        "is_sync": True,
+        "server_id": "server-" + hostname,
+        "component": "urman-agent",
+        "urman-agent_path": "/opt/urman-agent",
+        "urman-agent_id": "urman-agent-" + hostname,
+        "urman-agent_install_file": urman_agent
     })
 
 
@@ -97,7 +117,7 @@ def step_impl(context):
     uagent = api_get(context, "support/component?pattern=uagent")[-1]["Name"]
     ustats = api_get(context, "support/component?pattern=ustats")[-1]["Name"]
 
-    api_request_post(context, "server/add", {
+    api_post(context, "server/add", {
         "is_sync": True,
         "uagent_install_method": "ssh",
         "server_ip": context.new_server_ip,
@@ -114,19 +134,35 @@ def step_impl(context):
         "ustats_install_file": ustats,
     })
 
+    udeploy = api_get(context, "support/component?pattern=udeploy")[-1]["Name"]
+    api_post(context, "server/install", {
+        "is_sync": True,
+        "server_id": "server-" + hostname,
+        "component": "udeploy",
+        "udeploy_path": "/opt/udeploy",
+        "udeploy_id": "udeploy-" + hostname,
+        "udeploy_install_file": udeploy
+    })
 
-@when(u'I install Udeploy,Uguard-agent,Urman-agent on all server')
-def step_impl(context):
-    while True:
-        context.execute_steps(u"""
-                When I found a server without component uguard-agent, or I skip the test
-            """)
-        if context.server is None:
-            break
-        context.execute_steps(u"""
-                When I prepare the server for uguard
-                Then the response is ok
-            """)
+    uguard_agent = api_get(context, "support/component?pattern=uguard-agent")[-1]["Name"]
+    api_post(context, "server/install", {
+        "is_sync": True,
+        "server_id": "server-" + hostname,
+        "component": "uguard-agent",
+        "uguard-agent_path": "/opt/uguard-agent",
+        "uguard-agent_id": "uguard-agent-" + hostname,
+        "uguard-agent_install_file": uguard_agent
+    })
+
+    urman_agent = api_get(context, "support/component?pattern=urman-agent")[-1]["Name"]
+    api_request_post(context, "server/install", {
+        "is_sync": True,
+        "server_id": "server-" + hostname,
+        "component": "urman-agent",
+        "urman-agent_path": "/opt/urman-agent",
+        "urman-agent_id": "urman-agent-" + hostname,
+        "urman-agent_install_file": urman_agent
+    })
 
 @when(u'I batch add backup rules')
 def step_impl(context):
